@@ -3,7 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
+import { UsersModule } from './modules/users/users.module';
+import { TransactionsModule } from './modules/transactions/transactions.module';
 
 @Module({
   imports: [
@@ -18,14 +19,15 @@ import { UsersModule } from './users/users.module';
         type: 'mysql',
         host: config.get('DB_HOST'),
         port: Number(config.get('DB_PORT')),
-        username: config.get('DB_USER'),
-        password: config.get('DB_PASS'),
+        username: config.get('DB_USERNAME'),
+        password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
         autoLoadEntities: true,
         synchronize: true, // ⚠️ solo para desarrollo
       }),
     }),
     UsersModule,
+    TransactionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

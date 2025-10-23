@@ -1,6 +1,7 @@
 // src/users/entities/user.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
-
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
+import { Transaction } from '../../transactions/entities/transaction.entity';
+;
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -17,4 +18,9 @@ export class User {
 
   @Column({ nullable: false, default: 'user' })
   role: string; // valores: 'admin', 'user', 'premium'
+
+  @OneToMany(() => Transaction, (transaction) => transaction.user)
+  transactions: Transaction[];
+
+
 }
