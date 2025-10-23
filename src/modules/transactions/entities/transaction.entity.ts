@@ -1,6 +1,7 @@
 // src/modules/transactions/entities/transaction.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { Category } from '../../categories/entities/category.entity';
 
 
 @Entity()
@@ -23,4 +24,7 @@ export class Transaction {
   @ManyToOne(() => User, (user) => user.transactions)
   user: User;
 
-}
+  @ManyToOne(() => Category, (category) => category.transactions)
+    category: Category[];
+  }
+
