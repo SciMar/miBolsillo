@@ -5,6 +5,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './modules/users/users.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
+import { CategoriesModule } from './modules/categories/categories.module';
+import { BudgetsModule } from './modules/budgets/budgets.module';
+import { ReportsModule } from 'modules/reports/reports.module';
+import { NotificationsModule } from 'modules/notifications/notifications.module';
+import { SettingsModule } from 'modules/settings/settings.module';
 
 @Module({
   imports: [
@@ -26,8 +31,15 @@ import { TransactionsModule } from './modules/transactions/transactions.module';
         synchronize: true, // ⚠️ solo para desarrollo
       }),
     }),
-    UsersModule,
+    
+    BudgetsModule,
+    CategoriesModule,
+    NotificationsModule,
+    ReportsModule,
+    SettingsModule,
     TransactionsModule,
+    UsersModule
+    
   ],
   controllers: [AppController],
   providers: [AppService],
