@@ -1,122 +1,165 @@
-# 💰 Proyecto MiBolsillo – API de Finanzas Personales
+🪙 Mi Bolsillo — Backend API (NestJS + TypeORM + JWT)
+📘 Descripción General
 
-## 📘 Descripción general
-**MiBolsillo** es una API desarrollada en **NestJS + TypeORM + MySQL** que permite a los usuarios gestionar sus finanzas personales.  
-El sistema incluye módulos para **usuarios, autenticación, ingresos, egresos y ahorros**.
+Mi Bolsillo es una aplicación backend desarrollada en NestJS para la gestión financiera personal.
+Permite registrar ingresos y gastos, administrar presupuestos, clasificar transacciones por categorías y generar reportes, todo bajo un sistema de autenticación seguro con JWT y control de roles.
 
----
+⚙️ Tecnologías Utilizadas
 
-## 👩‍💻 Equipo de desarrollo
-| Módulo | Responsable | Descripción |
-|--------|--------------|-------------|
-| **Auth/Users** | Sofía Castellanos | Registro, login, autenticación JWT |
-| **Ingresos** | Valeria González | CRUD de ingresos, filtros, totales |
-| **Egresos** | Marcela Ramírez | CRUD de gastos, filtros y totales |
-| **Ahorros** | Heidy Romero | Metas de ahorro, aportes y progreso |
+NestJS — Framework principal (arquitectura modular y escalable)
 
----
+TypeORM — ORM para conexión y manejo de base de datos
 
-## 🚀 Tecnologías principales
-- **NestJS** (framework backend)
-- **TypeORM** (ORM para MySQL)
-- **MySQL** (base de datos relacional)
-- **JWT** (autenticación)
-- **Class Validator / Transformer**
-- **Swagger** (documentación de endpoints)
+MySQL / PostgreSQL — Base de datos relacional
 
----
+JWT (JSON Web Token) — Autenticación y autorización
 
-## ⚙️ Requisitos previos
-- Node.js 18 o superior  
-- MySQL instalado localmente  
-- DBeaver o MySQL Workbench (para gestionar la base de datos)
+Bcrypt — Encriptación de contraseñas
 
----
+Class Validator / Transformer — Validación de datos DTO
 
-## 🔧 Configuración inicial
+Dotenv — Manejo de variables de entorno
 
-### 1️⃣ Clonar el repositorio
-```bash
-git clone https://github.com/Dani-02R/Mi-bolsillo.git
-cd MiBolsillo
-```
+🧩 Módulos Principales
+1. Auth
 
-### 2️⃣ Instalar dependencias
-```bash
-npm install
-```
+Login y logout.
 
-### 3️⃣ Configurar variables de entorno
-Copia el archivo de ejemplo:
-```bash
-cp .env.example .env
-```
-Luego edita el archivo `.env` con tus credenciales de MySQL:
-```env
-DB_USER=root
-DB_PASS=tu_contraseña
-```
+Generación y validación de tokens JWT.
 
-### 4️⃣ Crear la base de datos
-En MySQL o DBeaver:
-```sql
-CREATE DATABASE mibolsillo;
-```
+Uso de guards para proteger rutas.
 
-### 5️⃣ Ejecutar el proyecto
-```bash
-npm run start:dev
-```
+Control de acceso según rol del usuario (admin, premium, estándar).
 
----
+2. Users
 
-## 📁 Estructura del proyecto
-```
+Registro de nuevos usuarios.
+
+Gestión de roles (user, premium, admin).
+
+Asociación con transacciones, presupuestos y notificaciones.
+
+Encriptación de contraseñas mediante bcrypt.
+
+3. Transactions
+
+Registro, actualización y eliminación de transacciones.
+
+Soporte para tipos: income (ingreso) y expense (gasto).
+
+Asociación con categorías y usuarios.
+
+Cálculo del balance general del usuario.
+
+4. Categories
+
+Creación y gestión de categorías personalizadas.
+
+Asociación con transacciones.
+
+Clasificación automática de movimientos según tipo (ingreso/gasto).
+
+5. Budgets
+
+Creación de presupuestos mensuales o por categoría.
+
+Seguimiento del gasto frente al presupuesto asignado.
+
+Notificaciones automáticas al superar límites definidos.
+
+6. Reports
+
+Generación de reportes financieros personalizados.
+
+Estadísticas de ingresos, gastos y balances.
+
+Filtrado por fechas, categorías y tipos de transacción.
+
+7. Settings
+
+Configuración de preferencias de usuario.
+
+Cambios de idioma, moneda y formato de visualización.
+
+Actualización de información personal o de seguridad.
+
+8. Notifications
+
+Envío de alertas sobre movimientos, presupuestos o recordatorios.
+
+Asociación con usuarios.
+
+Control de estado (leído / no leído).
+
+🔐 Autenticación y Roles
+
+El sistema utiliza JWT para autenticar usuarios.
+Cada token incluye información básica del usuario y su rol.
+
+Roles disponibles:
+
+Admin: Acceso total al sistema (gestión de usuarios y configuraciones globales).
+
+Premium: Acceso completo a transacciones, presupuestos, reportes y notificaciones.
+
+User: Acceso limitado a transacciones y configuración básica.
+
+Protección de rutas:
+Mediante guards (AuthGuard y RolesGuard), las rutas sensibles requieren un token válido y rol autorizado.
+
+🧠 Estructura del Proyecto
 src/
- ├── auth/          # Login, registro y JWT
- ├── users/         # Gestión de usuarios
- ├── incomes/       # Módulo de ingresos
- ├── expenses/      # Módulo de egresos
- ├── savings/       # Módulo de ahorros
- ├── common/        # Decorators, pipes, interceptors
- └── app.module.ts  # Módulo raíz
-```
+│
+├── app.module.ts
+├── main.ts
+├── config/
+│   └── database.config.ts
+└── modules/
+    ├── auth/
+    ├── users/
+    ├── transactions/
+    ├── categories/
+    ├── budgets/
+    ├── reports/
+    ├── settings/
+    └── notifications/
 
----
+🧾 Variables de Entorno (.env)
 
-## 🧠 Flujo de trabajo en equipo (Git Flow)
-- **main** → rama estable (solo merges finales)
-- **develop** → integración del equipo
-- **heidy / valeria / marcela / sofia** → ramas personales
+Ejemplo:
 
-Pasos:
-1. Antes de trabajar:  
-   ```bash
-   git checkout develop
-   git pull --rebase origin develop
-   ```
-2. Crear o actualizar tu rama personal:  
-   ```bash
-   git checkout <tu-rama>
-   ```
-3. Subir cambios y abrir Pull Request hacia `develop`.
+PORT=3000
+DB_HOST=localhost
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=123456
+DB_NAME=mi_bolsillo
+JWT_SECRET_KEY=SECRETKEY123
+JWT_EXPIRES_IN=1h
 
----
+🚀 Ejecución del Proyecto
+Instalar dependencias:
+npm install
 
-## ✅ Checklist antes de subir cambios
-- [ ] Código formateado con Prettier  
-- [ ] App corre sin errores  
-- [ ] Endpoint probado en Swagger o Postman  
-- [ ] Commit descriptivo (`feat:`, `fix:`, `chore:`)  
-- [ ] PR creado hacia `develop`  
+Ejecutar el servidor en modo desarrollo:
+npm run start:dev
 
----
+Compilar para producción:
+npm run build
+npm run start:prod
 
-## 🧾 Ejemplo de commit
-```
-feat(savings): crear endpoint para registrar aportes
-```
+📊 Futuras Implementaciones
 
----
+Integración con API de tasas de cambio.
 
-> 💡 Consejo: Si tienes dudas con Git o el flujo de trabajo.
+Reportes descargables (PDF/Excel).
+
+Módulo de metas de ahorro.
+
+Notificaciones push y recordatorios automáticos.
+
+👩‍💻 Autoras
+
+Marcela Ramírez Anzola, Daniela, Melissa y Ana 
+Proyecto académico — Programa Mujeres Digitales 2025
+Desarrollado con ❤️ usando NestJS y TypeORM.
