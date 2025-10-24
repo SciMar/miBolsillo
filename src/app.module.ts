@@ -28,7 +28,7 @@ import { SettingsModule } from 'modules/settings/settings.module';
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
         autoLoadEntities: true,
-        synchronize: true, // ⚠️ solo para desarrollo
+        synchronize: false, // ⚠️ solo para desarrollo, preguntar al profe
       }),
     }),
     

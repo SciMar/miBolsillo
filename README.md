@@ -160,6 +160,11 @@ Notificaciones push y recordatorios automáticos.
 
 👩‍💻 Autoras
 
-Marcela Ramírez Anzola, Daniela, Melissa y Ana 
+Ana Sofía Castellanos
+Claudia Marcela Ramírez Anzola
+Heidy Daniela Romero Aguiar
+Valeria Carolina Gonzalez Gonzalez
+
+
 Proyecto académico — Programa Mujeres Digitales 2025
 Desarrollado con ❤️ usando NestJS y TypeORM.
