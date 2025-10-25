@@ -1,10 +1,11 @@
-// src/users/entities/user.entity.ts
+// src/modules/users/entities/user.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { Transaction } from '../../transactions/entities/transaction.entity';
-import { Budget } from "modules/budgets/entities/budget.entity";
-import { Report } from "modules/reports/entities/report.entity";
-import { Setting } from "modules/settings/entities/setting.entity";
-import { Notification } from "modules/notifications/entities/notification.entity";
+import { Transaction } from "../../transactions/entities/transaction.entity";
+import { Budget } from "../../budgets/entities/budget.entity";
+import { Report } from "../../reports/entities/report.entity";           // ⬅️ antes: "modules/reports/..."
+import { Setting } from "../../settings/entities/setting.entity";        // ⬅️ antes: "modules/settings/..."
+import { Notification } from "../../notifications/entities/notification.entity"; // ⬅️ antes: "modules/notifications/..."
+
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -20,21 +21,20 @@ export class User {
   password: string;
 
   @Column({ nullable: false, default: 'user' })
-  role: string; // valores: 'admin', 'user', 'premium'
+  role: string;
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions: Transaction[];
 
   @OneToMany(() => Budget, (budget) => budget.user)
-    budgets: Budget[];
+  budgets: Budget[];
 
   @OneToMany(() => Report, (report) => report.user)
-    reports: Report[];
+  reports: Report[];
 
   @OneToMany(() => Setting, (setting) => setting.user)
-    settings: Setting[];
+  settings: Setting[];
 
   @OneToMany(() => Notification, (notification) => notification.user)
-    notifications: Notification[];
-
+  notifications: Notification[];
 }
