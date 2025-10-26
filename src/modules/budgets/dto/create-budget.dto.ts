@@ -1,22 +1,43 @@
 import { IsNumber, IsOptional, IsString, IsDateString, IsInt, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateBudgetDto {
-  @IsString()
-  name: string;
-
-  @IsNumber()
-  @Min(0)
-  amount: number;
+  // Aceptamos name o nombre (validaremos en el servicio que llegue al menos uno)
+  @IsOptional()
+  @IsString({ message: 'name/nombre debe ser texto' })
+  name?: string;
 
   @IsOptional()
-  @IsInt()
+  @IsString({ message: 'name/nombre debe ser texto' })
+  nombre?: string;
+
+  // Aceptamos amount o monto
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'amount/monto debe ser un número con máximo 2 decimales' })
+  amount?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'amount/monto debe ser un número con máximo 2 decimales' })
+  monto?: number;
+
+  // userId ahora está en el DTO para que no lo elimine el whitelist
+  @Type(() => Number)
+  @IsInt({ message: 'userId debe ser un entero' })
+  @Min(1, { message: 'userId debe ser mayor o igual a 1' })
+  userId: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'categoryId debe ser un entero' })
   categoryId?: number | null;
 
   @IsOptional()
-  @IsDateString()
+  @IsDateString({}, { message: 'startDate/inicio debe tener formato de fecha ISO (YYYY-MM-DD o YYYY-MM-DDTHH:mm:ssZ)' })
   startDate?: string | null;
 
   @IsOptional()
-  @IsDateString()
+  @IsDateString({}, { message: 'endDate/fin debe tener formato de fecha ISO (YYYY-MM-DD o YYYY-MM-DDTHH:mm:ssZ)' })
   endDate?: string | null;
 }
