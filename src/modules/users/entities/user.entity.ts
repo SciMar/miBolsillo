@@ -1,4 +1,4 @@
-// src/users/entities/user.entity.ts
+// src/modules/users/entities/user.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { Transaction } from '../../transactions/entities/transaction.entity';
 import { Budget } from "../../budgets/entities/budget.entity";
@@ -6,6 +6,7 @@ import { Report } from "../../reports/entities/report.entity";
 import { Setting } from "../../settings/entities/setting.entity";
 import { Notification } from "../../notifications/entities/notification.entity";
 import { Category } from "../../categories/entities/category.entity";
+
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -20,9 +21,6 @@ export class User {
   @Column({ nullable: false })
   password: string;
 
-  @Column({ nullable: false, default: 'user' })
-  role: string; // valores: 'admin', 'user', 'premium'
-  
 //!!!! realcion con categorias
   @OneToMany(() => Category, (category) => category.user)
   category: Category[];
@@ -31,17 +29,16 @@ export class User {
   transactions: Transaction[];
 
   @OneToMany(() => Budget, (budget) => budget.user)
-    budgets: Budget[];
+  budgets: Budget[];
 
   @OneToMany(() => Report, (report) => report.user)
-    reports: Report[];
+  reports: Report[];
 
   @OneToMany(() => Setting, (setting) => setting.user)
-    settings: Setting[];
+  settings: Setting[];
 
   @OneToMany(() => Notification, (notification) => notification.user)
-    notifications: Notification[];
-
+  notifications: Notification[];
 }
 
 
