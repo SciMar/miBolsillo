@@ -1,4 +1,3 @@
-// src/modules/budgets/entities/budget.entity.ts
 import {
   Entity, PrimaryGeneratedColumn, Column,
   ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn
@@ -14,6 +13,7 @@ export class Budget {
   @Column({ length: 255 })
   name: string;
 
+  // MySQL devuelve decimal como string; convertimos a number al responder
   @Column('decimal', { precision: 10, scale: 2 })
   amount: number;
 
@@ -23,7 +23,6 @@ export class Budget {
   @Column({ type: 'datetime', nullable: true })
   endDate: Date | null;
 
-  // Relación con User (y columna explícita)
   @ManyToOne(() => User, (user) => user.budgets, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
@@ -31,7 +30,6 @@ export class Budget {
   @Column('int')
   userId: number;
 
-  // Opcional: presupuesto por categoría (si es null => general)
   @ManyToOne(() => Category, (category) => category.budgets, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'categoryId' })
   category?: Category | null;
@@ -44,4 +42,13 @@ export class Budget {
 
   @UpdateDateColumn()
   updatedAt: Date;
+}
+
+export interface IBudget {
+  id: number;
+  name: string;
+  amount: number;
+  startDate?: Date;
+  endDate?: Date;
+  userId: number;
 }
