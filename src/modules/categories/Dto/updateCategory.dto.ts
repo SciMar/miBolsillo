@@ -6,6 +6,9 @@ export class updateCategoryDTO{
         name?: string;
     
         @IsNotEmpty()
-        type: 'ingreso' | 'gasto';
+        type?: 'income' | 'expense';
+
+        @IsEmpty()
+        status?: boolean;
 }
 

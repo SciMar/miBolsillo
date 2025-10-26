@@ -25,6 +25,7 @@ export class Transaction {
   user: User;
 
   @ManyToOne(() => Category, (category) => category.transactions)
-    category: Category[];
+  category: Category[];
+  
   }
 

@@ -1,10 +1,11 @@
 // src/users/entities/user.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import { Transaction } from '../../transactions/entities/transaction.entity';
-import { Budget } from "modules/budgets/entities/budget.entity";
-import { Report } from "modules/reports/entities/report.entity";
-import { Setting } from "modules/settings/entities/setting.entity";
-import { Notification } from "modules/notifications/entities/notification.entity";
+import { Budget } from "../../budgets/entities/budget.entity";
+import { Report } from "../../reports/entities/report.entity";
+import { Setting } from "../../settings/entities/setting.entity";
+import { Notification } from "../../notifications/entities/notification.entity";
+import { Category } from "../../categories/entities/category.entity";
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -21,6 +22,10 @@ export class User {
 
   @Column({ nullable: false, default: 'user' })
   role: string; // valores: 'admin', 'user', 'premium'
+  
+//!!!! realcion con categorias
+  @OneToMany(() => Category, (category) => category.user)
+  category: Category[];
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions: Transaction[];
@@ -38,3 +43,5 @@ export class User {
     notifications: Notification[];
 
 }
+
+
