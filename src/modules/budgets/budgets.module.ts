@@ -1,4 +1,3 @@
-// src/modules/budgets/budgets.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BudgetsService } from './budgets.service';
