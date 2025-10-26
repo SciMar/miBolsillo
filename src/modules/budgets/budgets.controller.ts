@@ -1,5 +1,4 @@
-// src/modules/budgets/budgets.controller.ts
-import { Controller, Get, Post, Body, Param, Patch, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, Query, ParseIntPipe } from '@nestjs/common';
 import { BudgetsService } from './budgets.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
@@ -16,26 +15,38 @@ export class BudgetsController {
   // /budgets/user/1?categoryId=3
   @Get('user/:userId')
   findAllByUser(
-    @Param('userId') userId: string,
+    @Param('userId', ParseIntPipe) userId: number,
     @Query('categoryId') categoryId?: string,
   ) {
-    return this.service.findAllByUser(Number(userId), {
+    return this.service.findAllByUser(userId, {
       categoryId: categoryId ? Number(categoryId) : undefined,
     });
   }
+  @Get()
+findAll() {
+  return this.service.findAll();
+}
+
+  // 🔍 Buscar presupuestos por nombre
+@Get('buscar')
+buscar(@Query('q') q: string) {
+  return this.service.buscarPorNombre(q);
+}
+
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(Number(id));
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.service.findOne(id);
   }
 
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateBudgetDto) {
-    return this.service.update(Number(id), dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBudgetDto) {
+    return this.service.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.service.remove(Number(id));
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.service.remove(id);
   }
 }
