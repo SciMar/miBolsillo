@@ -1,6 +1,6 @@
 // src/modules/transactions/entities/transaction.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import { User } from 'modules/users/entities/user.entity';
 import { Category } from '../../categories/entities/category.entity';
 
 

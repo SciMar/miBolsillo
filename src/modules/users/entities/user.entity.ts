@@ -1,12 +1,17 @@
 // src/modules/users/entities/user.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { Transaction } from '../../transactions/entities/transaction.entity';
-import { Budget } from "../../budgets/entities/budget.entity";
-import { Report } from "../../reports/entities/report.entity";
-import { Setting } from "../../settings/entities/setting.entity";
-import { Notification } from "../../notifications/entities/notification.entity";
-import { Category } from "../../categories/entities/category.entity";
+import { Transaction } from 'modules/transactions/entities/transaction.entity';
+import { Budget } from "modules/budgets/entities/budget.entity";
+import { Report } from "modules/reports/entities/report.entity";
+import { Setting } from "modules/settings/entities/setting.entity";
+import { Notification } from "modules/notifications/entities/notification.entity";
 
+export type Roles="admin"| "user"|"premium"
+export enum RolesEnum{
+  ADMIN="admin",
+  USER="user", 
+  PREMIUM="premium"
+}
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -21,9 +26,11 @@ export class User {
   @Column({ nullable: false })
   password: string;
 
-//!!!! realcion con categorias
-  @OneToMany(() => Category, (category) => category.user)
-  category: Category[];
+  @Column({ nullable: false, default: 'user' })
+  role:Roles;
+
+  @Column({nullable:false, default:true})
+  isActive:boolean;
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions: Transaction[];
