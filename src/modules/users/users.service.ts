@@ -24,14 +24,14 @@ export class UsersService { //Servicio para manejar los usuarios
         return this.usersRepo.find();
     }
 
-    //REGISTRO DE USUARIO
+    //1️⃣REGISTRO DE USUARIO
     async create(newUser: CreateUserDTO) {
-    // 1️⃣ Verifica si ya existe un usuario con el mismo email
+    // Verifica si ya existe un usuario con el mismo email
     const existingUser = await this.usersRepo.findOne({ where: { email: newUser.email } });
     if (existingUser) 
         throw new BadRequestException('Ya existe un usuario con ese email');
 
-    // 2️⃣ Crea una nueva entidad User con los datos del DTO
+    // Crea una nueva entidad User con los datos del DTO
     //    - role: si no se envía, se asigna 'user' por defecto
     //    - isActive: por defecto activo
     const userEntity = this.usersRepo.create({
@@ -39,13 +39,13 @@ export class UsersService { //Servicio para manejar los usuarios
         isActive: true,
     });
 
-    // 3️⃣ Guarda la entidad en la base de datos
+    //  Guarda la entidad en la base de datos
     //    - Aquí se ejecuta el @BeforeInsert() de la entidad
     //    - La contraseña se encripta automáticamente antes de insertarse
     return this.usersRepo.save(userEntity);
     }
 
-    // ✅ NUEVO: Actualizar rol de usuario
+    // 2️⃣  NUEVO: Actualizar rol de usuario
     async updateRole(id: number, newRole: 'user' | 'premium') {
         // 1️⃣ Busca el usuario
         const user = await this.findOne(id);
@@ -62,7 +62,7 @@ export class UsersService { //Servicio para manejar los usuarios
         return this.findOne(id);
     }
 
-    //actualiza un usuario por id
+    //3️⃣actualiza un usuario por id
     async update(id: number, UpdateUser: UpdateUserDTO) {
         await this.usersRepo.update(id, UpdateUser)
             return this.findOne(id);

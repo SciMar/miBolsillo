@@ -56,10 +56,12 @@ export class AuthService {
 }
 
 
-    // Función asíncrona para iniciar sesión
+    //LOGIN
         async login (data: LoginUserDTO) {
+            console.log('Datos recibidos:', data);
         // 1️⃣ Busca el usuario por email
         const user = await this.userRepo.findOne({where: {email: data.email}})
+        console.log('Usuario encontrado:', user);
         //verifica si el usuario existe
         if (!user) {
             throw new UnauthorizedException('Credenciales invalidas-EMAIL');
@@ -83,10 +85,11 @@ export class AuthService {
                 email: user.email, 
                 role: user.role,
             }; // Información que se incluirá en el token
-            
+            console.log('Payload para JWT:', payloadToken);
+
         const token = await this.jwtService.signAsync(payloadToken); // Genera el token JWT
-        return {
-            accessToken: token // Retorna el token de acceso
+        console.log('Token generado:', token);
+        return {accessToken: token // Retorna el token de acceso
         };
 
     }

@@ -37,7 +37,9 @@ export class UsersController {
   // ✅ ADMIN y USER → actualizar su propio perfil o datos
   @Put(':id')
   @Roles(RolesEnum.ADMIN, RolesEnum.USER, RolesEnum.PREMIUM)
-  update(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateUserDTO, @Request() req) {
+  update(@Param('id', ParseIntPipe) id: number, 
+  @Body() body: UpdateUserDTO, 
+  @Request() req) {
     // 🔒 Si el rol no es admin, solo puede editar su propio usuario
     if (req.user.role !== RolesEnum.ADMIN && req.user.id !== id) {
       return { message: 'No tienes permiso para editar otro usuario.' };
