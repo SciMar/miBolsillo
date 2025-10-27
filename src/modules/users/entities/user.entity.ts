@@ -8,7 +8,7 @@ import { Notification } from "modules/notifications/entities/notification.entity
 
 export type Roles="admin"| "user"|"premium"
 export enum RolesEnum{
-  ADMIN="admin",
+  ADMIN="admin", 
   USER="user", 
   PREMIUM="premium"
 }
