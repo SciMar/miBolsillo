@@ -1,14 +1,19 @@
-import { IsEmpty, IsNotEmpty, Length, MinLength } from "class-validator";
+import { IsNotEmpty, IsString, IsEnum, IsOptional, IsBoolean, MinLength, MaxLength } from 'class-validator';
 
-export class createCategoryDTO{
-    @IsNotEmpty()
-    @Length(4, 15,{message: "La categoria debe tener un minimo de 4 caracteres y un maximo de 15"})
-    name: string;
+export class createCategoryDTO {
+  @IsNotEmpty({ message: 'El nombre es obligatorio' })
+  @IsString({ message: 'El nombre debe ser texto' })
+  @MinLength(3, { message: 'El nombre debe tener al menos 3 caracteres' })
+  @MaxLength(50, { message: 'El nombre no puede exceder 50 caracteres' })
+  name: string;
 
-    @IsNotEmpty()
-    type: 'income' | 'expense';
+  @IsNotEmpty({ message: 'El tipo es obligatorio' })
+  @IsEnum(['income', 'expense'], { 
+    message: 'El tipo debe ser "income" o "expense"' 
+  })
+  type: 'income' | 'expense';
 
-    @IsEmpty()
-    status?: boolean;
+  @IsOptional()
+  @IsBoolean({ message: 'El status debe ser true o false' })
+  status?: boolean;
 }
-

@@ -19,8 +19,5 @@ export class Category {
 
   @OneToMany(() => Transaction, (transaction) => transaction.category)
   transactions: Transaction[]
-
-  @OneToMany(() => Budget, (budget) => budget.category)
-  budgets: Budget[];
   
 }

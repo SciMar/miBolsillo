@@ -1,10 +1,9 @@
-import { BadRequestException, Injectable, NotAcceptableException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Category } from './entities/category.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { And, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { createCategoryDTO } from './Dto/createCategory.dto';
 import { updateCategoryDTO } from './Dto/updateCategory.dto';
-
 
 @Injectable()
 export class CategoriesService {
@@ -13,70 +12,188 @@ export class CategoriesService {
         private categoryRepo: Repository<Category>
     ){}
 
-    getCategoryAdmi(){// ver todas las categorias- ADMIN
-       return this.categoryRepo.find()
-     }
+    // =====================
+    // CONSULTAS GENERALES
+    // =====================
 
-    getActive(){ // ver categorias activas -ADMIN
-        return this.categoryRepo.findBy({status:true})
-    }
-    
-    getCategory() {//ver todas las categorias activas pero con el numero de registros de esa categoria ESTANDAR, PREMIUN (ya que admin solo administra categorias)
-    return this.categoryRepo.createQueryBuilder('categories')
-    .where('categories.status = :status', {status: true} )
-    .loadRelationCountAndMap("categories.transactionsCount", 'categories.transactions') 
-    .getMany()
+    // Ver todas las categorías activas con contador de transacciones
+    // ROLES: USER, PREMIUM, ADMIN
+    getCategory() {
+        return this.categoryRepo.createQueryBuilder('categories')
+            .where('categories.status = :status', { status: true })
+            .loadRelationCountAndMap('categories.transactionsCount', 'categories.transactions') 
+            .getMany();
     }
 
-
-    getByType(type: 'income' | 'expense') { //ver categorias activas por el tipo ADMIN, PREMIUN , ESTANDAR
-    return this.categoryRepo.find({ where:{type, status:true}});
-  }
-
-    async getById(id:number){//ver categorias por id - ADMIN
-        const findIdC = await this.categoryRepo.findOneBy({id})
-        if (!findIdC) throw new NotFoundException(`Categoria con el id'${id}' no encontrada`)
-        return findIdC
+    // Ver categorías activas por tipo (income/expense)
+    // ROLES: USER, PREMIUM, ADMIN
+    getByType(type: 'income' | 'expense') {
+        return this.categoryRepo.find({ 
+            where: { type, status: true },
+            order: { name: 'ASC' } // ⭐ Ordenar alfabéticamente
+        });
     }
 
-    async getByName(name:string){ // ver categorias activas por nombre- ADMIN, ESTANDAR, PREMIUN
-        const foundName= await this.categoryRepo.createQueryBuilder('categories')
-        .where('categories.name LIKE :name', { name: `%${name}%`}).andWhere('categories.status = :status',{status: true})
-        .getMany()
-        if (foundName.length === 0) throw new NotFoundException(`Categoria con el nombre '${name}' no encontrada`)
-        return foundName
-    }
-
-    async createCategory(newCategory: createCategoryDTO){ // ADMIN, PREMIUN
-        const nameCataegory = await this.categoryRepo.findOne({where:{name:newCategory.name}})
-        if (nameCataegory) throw new BadRequestException(`Ya existe una categoría con el nombre ${newCategory.name}`);
-        const categoryCreated = this.categoryRepo.create(newCategory)
-        if(!['income', 'expense'].includes(newCategory.type)) throw new BadRequestException ("El tipo no es income ni expense, ingrese un tipo valido")
-        return this.categoryRepo.save(categoryCreated)
-    } // newCategory.type != 'expense'&& newCategory.type != 'income'
-
-    async updateCategory(id:number, updateCategory: updateCategoryDTO){ //ADMIN
-        await this.getById(id)
-        await this.categoryRepo.update(id, updateCategory)
-        if(updateCategory.status === true){
-            return {message: `La categoria con id ${id} se actualizo y se activo correctamente`}
-        }else if(updateCategory.status === false){
-            return {message: `La categoria con id ${id} se actualizo y se desactivo correctamente`}
+    // Ver categoría por ID
+    // ROLES: USER, PREMIUM, ADMIN
+    async getById(id: number) {
+        const category = await this.categoryRepo.findOne({
+            where: { id },
+            relations: ['transactions'] // ⭐ Opcional: incluir transacciones si es necesario
+        });
+        
+        if (!category) {
+            throw new NotFoundException(`Categoría con el id '${id}' no encontrada`);
         }
-        if(updateCategory.type){
-            if(updateCategory.type != 'expense'&& updateCategory.type != 'income') throw new BadRequestException ("El tipo no es income ni expense, ingrese un tipo valido")
-                return {message: `La categoria con id ${id} se actualizo correctamente y es de tipo: ${updateCategory.type}`
+        
+        return category;
+    }
+
+    // Buscar categorías activas por nombre (búsqueda parcial)
+    // ROLES: USER, PREMIUM, ADMIN
+    async getByName(name: string) {
+        const categories = await this.categoryRepo.createQueryBuilder('categories')
+            .where('categories.name LIKE :name', { name: `%${name}%` })
+            .andWhere('categories.status = :status', { status: true })
+            .orderBy('categories.name', 'ASC')
+            .getMany();
+        
+        if (categories.length === 0) {
+            throw new NotFoundException(`No se encontraron categorías con el nombre '${name}'`);
+        }
+        
+        return categories;
+    }
+
+    // =====================
+    // ADMIN: GESTIÓN COMPLETA
+    // =====================
+
+    // Ver TODAS las categorías (activas e inactivas)
+    // ROLES: ADMIN
+    getCategoryAdmi() {
+        return this.categoryRepo.find({
+            order: { status: 'DESC', name: 'ASC' } // ⭐ Activas primero, luego alfabético
+        });
+    }
+
+    // Crear nueva categoría
+    // ROLES: ADMIN
+    async createCategory(newCategory: createCategoryDTO) {
+        // ⭐ Validar tipo primero (más eficiente)
+        if (!['income', 'expense'].includes(newCategory.type)) {
+            throw new BadRequestException('El tipo debe ser "income" o "expense"');
+        }
+
+        // Verificar si ya existe una categoría con ese nombre
+        const existingCategory = await this.categoryRepo.findOne({
+            where: { name: newCategory.name }
+        });
+        
+        if (existingCategory) {
+            throw new BadRequestException(
+                `Ya existe una categoría con el nombre "${newCategory.name}"`
+            );
+        }
+
+        const categoryCreated = this.categoryRepo.create(newCategory);
+        return this.categoryRepo.save(categoryCreated);
+    }
+
+    // Actualizar categoría
+    // ROLES: ADMIN
+    async updateCategory(id: number, updateCategory: updateCategoryDTO) {
+        // Verificar que la categoría existe
+        await this.getById(id);
+
+        // ⭐ Validar tipo si viene en el update
+        if (updateCategory.type && !['income', 'expense'].includes(updateCategory.type)) {
+            throw new BadRequestException('El tipo debe ser "income" o "expense"');
+        }
+
+        // ⭐ Verificar nombre duplicado si se está actualizando el nombre
+        if (updateCategory.name) {
+            const existingCategory = await this.categoryRepo.findOne({
+                where: { name: updateCategory.name }
+            });
+            
+            if (existingCategory && existingCategory.id !== id) {
+                throw new BadRequestException(
+                    `Ya existe otra categoría con el nombre "${updateCategory.name}"`
+                );
             }
         }
-        return { message: `La categoria con id ${id} se actualizo correctamente` };
-    }
-    
 
-    async desactivateCategory(id:number){  //ADMIN PREMIUN pero si admin ya lo hace en update solo pa premiun?
-        const byeCategory = await this.getById(id)
-        byeCategory.status = false
-        await this.categoryRepo.save(byeCategory)
-        return {message: `La categoria con id ${id} se desactivo correctamente`}
+        // Realizar la actualización
+        await this.categoryRepo.update(id, updateCategory);
+
+        // ⭐ Mensajes más claros y consistentes
+        const messages: string[] = [`Categoría con id ${id} actualizada correctamente`];
+        
+        if (updateCategory.status === true) {
+            messages.push('Estado: Activada');
+        } else if (updateCategory.status === false) {
+            messages.push('Estado: Desactivada');
+        }
+        
+        if (updateCategory.type) {
+            messages.push(`Tipo: ${updateCategory.type}`);
+        }
+
+        return { 
+            message: messages.join(' | '),
+            id 
+        };
     }
 
+    // Desactivar categoría (soft delete)
+    // ROLES: ADMIN
+    async desactivateCategory(id: number) {
+        const category = await this.getById(id);
+        
+        // ⭐ Verificar si ya está desactivada
+        if (!category.status) {
+            throw new BadRequestException(`La categoría con id ${id} ya está desactivada`);
+        }
+
+        category.status = false;
+        await this.categoryRepo.save(category);
+        
+        return { 
+            message: `Categoría con id ${id} desactivada correctamente`,
+            id 
+        };
+    }
+
+    // =====================
+    // MÉTODOS AUXILIARES (opcional)
+    // =====================
+
+    // ⭐ Verificar si una categoría puede ser eliminada (sin transacciones asociadas)
+    async canDelete(id: number): Promise<boolean> {
+        const category = await this.categoryRepo.findOne({
+            where: { id },
+            relations: ['transactions']
+        });
+        
+        return category && category.transactions.length === 0;
+    }
+
+    // ⭐ Obtener estadísticas de categorías (útil para dashboard admin)
+    async getStatistics() {
+        const [total, active, income, expense] = await Promise.all([
+            this.categoryRepo.count(),
+            this.categoryRepo.count({ where: { status: true } }),
+            this.categoryRepo.count({ where: { type: 'income' } }),
+            this.categoryRepo.count({ where: { type: 'expense' } })
+        ]);
+
+        return {
+            total,
+            active,
+            inactive: total - active,
+            income,
+            expense
+        };
+    }
 }

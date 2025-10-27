@@ -30,10 +30,6 @@ export class Budget {
   @Column('int')
   userId: number;
 
-  @ManyToOne(() => Category, (category) => category.budgets, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'categoryId' })
-  category?: Category | null;
-
   @Column('int', { nullable: true })
   categoryId?: number | null;
 
@@ -47,4 +43,3 @@ export class Budget {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   remainingAmount: number;
 }
-
