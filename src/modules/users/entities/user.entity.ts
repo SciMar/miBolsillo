@@ -37,9 +37,12 @@ export class User {
   isActive:boolean;
 
   //Relaciones
+
+   // 🔄 Relación con transacciones
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions: Transaction[];
 
+   // 🔄 Relación con presupuestos
   @OneToMany(() => Budget, (budget) => budget.user)
   budgets: Budget[];
 
@@ -51,9 +54,6 @@ export class User {
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notifications: Notification[];
-
-  @OneToMany(()=> Category, (category)=>category.user)
-  categories: Category [];
 
 }
 

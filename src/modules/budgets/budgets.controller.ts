@@ -1,8 +1,14 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { BudgetsService } from './budgets.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesEnum } from '../users/entities/user.entity';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles (RolesEnum.PREMIUM, RolesEnum.ADMIN)
 @Controller('budgets')
 export class BudgetsController {
   constructor(private readonly service: BudgetsService) {}

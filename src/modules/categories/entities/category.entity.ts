@@ -16,14 +16,11 @@ export class Category {
 
   @Column({default: true})
   status: boolean
-// !!!relacion con user
-  @ManyToOne(()=> User, (user)=>user.categories)
-  user: User[]
 
   @OneToMany(() => Transaction, (transaction) => transaction.category)
   transactions: Transaction[]
 
   @OneToMany(() => Budget, (budget) => budget.category)
-  budgets: Budget[]
+  budgets: Budget[];
   
 }

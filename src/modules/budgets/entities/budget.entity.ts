@@ -42,5 +42,9 @@ export class Budget {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  // budget.entity.ts
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  remainingAmount: number;
 }
 
