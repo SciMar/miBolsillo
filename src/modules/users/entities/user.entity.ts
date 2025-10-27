@@ -1,23 +1,27 @@
 // src/modules/users/entities/user.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
-import { Transaction } from 'modules/transactions/entities/transaction.entity';
-import { Budget } from "modules/budgets/entities/budget.entity";
-import { Report } from "modules/reports/entities/report.entity";
-import { Setting } from "modules/settings/entities/setting.entity";
-import { Notification } from "modules/notifications/entities/notification.entity";
+import { Transaction } from '../../transactions/entities/transaction.entity';
+import { Budget } from "../../budgets/entities/budget.entity";
+import { Category } from "../../categories/entities/category.entity";
+import { Notification } from "../../notifications/entities/notification.entity";
+import { Report } from "../../reports/entities/report.entity";
+import { Setting } from "../../settings/entities/setting.entity";
 
+// Tipos y enum para roles
 export type Roles="admin"| "user"|"premium"
 export enum RolesEnum{
   ADMIN="admin", 
   USER="user", 
   PREMIUM="premium"
 }
-@Entity()
+
+// Definición de la entidad User
+@Entity() //decorador que marca la clase como una entidad de base de datos
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn() //decorador que marca la propiedad como clave primaria      
   id: number;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false }) //decorador que marca la propiedad como columna de la tabla
   name: string;
 
   @Column({ unique: true, nullable: false })
@@ -32,6 +36,7 @@ export class User {
   @Column({nullable:false, default:true})
   isActive:boolean;
 
+  //Relaciones
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions: Transaction[];
 
@@ -46,6 +51,10 @@ export class User {
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notifications: Notification[];
+
+  @OneToMany(()=> Category, (category)=>category.user)
+  categories: Category [];
+
 }
 
 

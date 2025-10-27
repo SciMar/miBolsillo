@@ -7,7 +7,7 @@ import { Category } from './src/modules/categories/entities/category.entity';
 import { Budget } from './src/modules/budgets/entities/budget.entity';
 import { Report } from './src/modules/reports/entities/report.entity';
 import { Setting } from './src/modules/settings/entities/setting.entity';
-import { Notification } from "./src/modules/notifications/entities/notification.entity";
+import { Notification } from './src/modules/notifications/entities/notification.entity';
  
 dotenv.config()
 

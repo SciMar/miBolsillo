@@ -1,16 +1,17 @@
-import { IsEmail, IsNotEmpty, IsString, MaxLength, MinLength } from "class-validator";
-export class CreateUserDTO{
-    @IsString()
-    @IsNotEmpty()
-    name:string; 
+import { IsEmail, IsEnum, IsNotEmpty, IsString, Length } from 'class-validator';
+import { Transform } from 'class-transformer';
 
-    @IsEmail()
-    @IsNotEmpty()
-    email:string; 
+export class CreateUserDTO {
+  @IsString()
+  @IsNotEmpty({ message: 'El nombre es obligatorio' })
+  @Transform(({ value }) => value.trim().toUpperCase())
+  name: string;
 
-    @IsString()
-    @IsNotEmpty()
-    @MinLength(6)
-    @MaxLength(15)
-    password:string
+  @IsEmail({}, { message: 'El correo electrónico no es válido' })
+  @Transform(({ value }) => value.trim().toLowerCase())
+  email: string;
+
+  @IsString()
+  @Length(6, 20, { message: 'La contraseña debe tener entre 6 y 20 caracteres' })
+  password: string;
 }

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne } from 'typeorm';
 import { Transaction } from '../../transactions/entities/transaction.entity';
 import { User } from '../../users/entities/user.entity';
 import { Budget } from '../../budgets/entities/budget.entity';
@@ -17,7 +17,7 @@ export class Category {
   @Column({default: true})
   status: boolean
 // !!!relacion con user
-  @OneToMany(()=> User, (user)=>user.category)
+  @ManyToOne(()=> User, (user)=>user.categories)
   user: User[]
 
   @OneToMany(() => Transaction, (transaction) => transaction.category)

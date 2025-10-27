@@ -1,74 +1,85 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
-import { User } from './entities/user.entity';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { UpdateUserDTO } from './dto/update-user.dto';
-import { LoginUserDTO } from './dto/login-user.dto';
-
-
+import { Repository } from 'typeorm';
+import { User } from './entities/user.entity';
 @Injectable()
-export class UsersService {
-    constructor(
+export class UsersService { //Servicio para manejar los usuarios
+    /**
+     * Inyecta el repositorio de usuarios para interactuar con la base de datos
+     * @param usersRepo Repositorio de la entidad User
+     * findAll(): Devuelve todos los usuarios
+     * findOne(id: number): Devuelve un usuario por su ID
+     * create(newUser: CreateUserDTO): Crea un nuevo usuario
+     * update(id: number, UpdateUser: UpdateUserDTO): Actualiza un usuario existente
+     * remove(id: number): Elimina un usuario por su ID
+     */
+    constructor (
         @InjectRepository(User)
-        private userRepository: Repository<User>,
-        private jwtService:JwtService
-    ){}
+        private usersRepo: Repository<User>
+    ) {}
 
-    async registerUser(dataNewUser:CreateUserDTO){
-        const hashedPassword= await bcrypt.hash(dataNewUser.password, 10); 
-        const newUser=this.userRepository.create({...dataNewUser, password:hashedPassword});
-        const resultQuery=await this.userRepository.save(newUser)
-        if(!resultQuery){
-            return{ message:"Error al registrar la información"}
-        }else{
-            return{
-                message:"La información ha sido registrada correctamente",
-                user:{name:newUser.name, email:newUser.email}
-            }
-        }
+    findAll() {
+        return this.usersRepo.find();
     }
 
-    async updateUser(id:number, data:UpdateUserDTO){
-        const dataToUpdate={...data}; 
-        let dataWithPassword; 
-        if(data.password){
-            const hashedNewPassword=await bcrypt.hash(data.password,10); 
-            dataWithPassword={...dataToUpdate,password:hashedNewPassword}
-        }
-        const successfulUpdate=await this.userRepository.update(id, data.password? dataWithPassword:dataToUpdate); 
-        if(!successfulUpdate){
-            return{ message:"Error al actualizar la información"}
-        }else{
-            return{ message:"Información actualizada con éxito"}
-        }
+    //REGISTRO DE USUARIO
+    async create(newUser: CreateUserDTO) {
+    // 1️⃣ Verifica si ya existe un usuario con el mismo email
+    const existingUser = await this.usersRepo.findOne({ where: { email: newUser.email } });
+    if (existingUser) 
+        throw new BadRequestException('Ya existe un usuario con ese email');
+
+    // 2️⃣ Crea una nueva entidad User con los datos del DTO
+    //    - role: si no se envía, se asigna 'user' por defecto
+    //    - isActive: por defecto activo
+    const userEntity = this.usersRepo.create({
+        ...newUser,
+        isActive: true,
+    });
+
+    // 3️⃣ Guarda la entidad en la base de datos
+    //    - Aquí se ejecuta el @BeforeInsert() de la entidad
+    //    - La contraseña se encripta automáticamente antes de insertarse
+    return this.usersRepo.save(userEntity);
     }
 
-    async inactiveUser(id:number){
-        const inactiveUser=await this.userRepository.update(id, {isActive:false});
-        if(inactiveUser.affected===0){
-            throw new NotFoundException(`El usuario con id ${id} no existe`); 
-        }else{
-            const user=await this.userRepository.findOne({where:{id}});
-            return{message:`El usuario ${user.name} ha sido inactivado exitosamente`}
+    // ✅ NUEVO: Actualizar rol de usuario
+    async updateRole(id: number, newRole: 'user' | 'premium') {
+        // 1️⃣ Busca el usuario
+        const user = await this.findOne(id);
+        
+        // 2️⃣ Evita que se cambie el rol de un admin
+        if (user.role === 'admin') {
+            throw new ForbiddenException('No se puede cambiar el rol de un administrador');
         }
+
+        // 3️⃣ Actualiza el rol
+        await this.usersRepo.update(id, { role: newRole });
+
+        // 4️⃣ Retorna el usuario actualizado
+        return this.findOne(id);
     }
 
-    async loginUser(data:LoginUserDTO){
-        const passwordValid=await bcrypt.compare(data.password, (await this.userRepository.findOne({where:{email:data.email}})).password);
-        if(!passwordValid){ throw new UnauthorizedException("Credenciales incorrectas")}
-
-        const userExists=await this.userRepository.findOne({where:{email:data.email, password:data.password}});
-        if(!userExists){ throw new UnauthorizedException("Credenciales incorrectas")}
-
-        const payLoadToken={id:userExists.id, name:userExists.name, email:userExists.email, role:userExists.role}
-        const token=await this.jwtService.signAsync(payLoadToken);
-        return{
-            message:`Bienvenido/a ${userExists.name} a Mi Bolsillo`,
-            token:token
+    //actualiza un usuario por id
+    async update(id: number, UpdateUser: UpdateUserDTO) {
+        await this.usersRepo.update(id, UpdateUser)
+            return this.findOne(id);
         }
+    
+    //elimina un usuario por id
+    async remove(id: number){ //elimina un usuario por id
+        const result = await this.usersRepo.delete(id); 
+        if (result.affected === 0) throw new NotFoundException('Usuario no encontrado')
+        return {delete: true} //elimina el usuario del array
+    }   
 
+    // Busca un usuario por su ID
+    async findOne(id: number) {
+        const userFind = await this.usersRepo.findOne ({where:{id}})
+        if (!userFind) throw new NotFoundException('Usuario no encontrado')
+        return userFind
     }
 }
+  

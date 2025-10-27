@@ -9,12 +9,7 @@
     "target": "es2020",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./src",
-    "paths": {
-      "@product/*": ["product/*"],
-      "@user/*": ["user/*"],
-      "@shared/*": ["shared/*"]
-    },
+    "baseUrl": "./",
     "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,

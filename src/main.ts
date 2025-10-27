@@ -6,8 +6,11 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  ValidationPipe,
 } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 
+// 🔥 Filtro global de excepciones
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
@@ -19,7 +22,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      const response: any = exception.getResponse(); // 👈 cambio aquí
+      const response: any = exception.getResponse();
 
       if (typeof response === 'string') {
         mensaje = response;
@@ -48,12 +51,46 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   }
 }
 
+// 🚀 Función principal que arranca la app
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Permitir CORS (para frontend)
+  app.enableCors();
+
+  // Prefijo global para tus rutas (opcional pero recomendado)
+  app.setGlobalPrefix('api');
+
+  // Validaciones globales
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // elimina propiedades que no están en el DTO
+      transform: true, // convierte tipos automáticamente
+      transformOptions: { enableImplicitConversion: true }, // permite conversiones automáticas (string → number)
+    }),
+  );
+
+  // Verificar la conexión a la base de datos
+  const dataSource = app.get(DataSource);
+  if (!dataSource.isInitialized) {
+  try {
+    await dataSource.initialize();
+    console.log('✅ Conexión a la base de datos establecida');
+  } catch (error) {
+    console.error('❌ No se pudo conectar a la base de datos:', error.message);
+    process.exit(1);
+  }
+} else {
+  console.log('✅ Conexión a la base de datos ya estaba establecida');
+}
+  
+  // Filtro global de errores
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  await app.listen(process.env.PORT ?? 3000);
-  console.log(`🚀 Servidor corriendo en http://localhost:${process.env.PORT ?? 3000}`);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+
+  console.log(`🚀 Servidor corriendo en http://localhost:${port}`);
 }
 bootstrap();
+
