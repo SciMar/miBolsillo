@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { LoginUserDTO } from '../users/dto/login-user.dto';
 import { User } from '../users/entities/user.entity';
 import { CreateUserDTO } from '../users/dto/create-user.dto';
+import {RecoverPasswordDTO} from '../users/dto/recover-password.dto'
 
 // Servicio de Autenticación
 @Injectable() // Decorador que marca la clase como un proveedor inyectable
@@ -54,24 +55,22 @@ export class AuthService {
         }
     };
 }
-
-
-    //LOGIN
-        async login (data: LoginUserDTO) {
-            console.log('Datos recibidos:', data);
+    //Función asincrona para autenticar usuarios
+    async login (data: LoginUserDTO) {
+        console.log('Datos recibidos:', data);
         // 1️⃣ Busca el usuario por email
         const user = await this.userRepo.findOne({where: {email: data.email}})
         console.log('Usuario encontrado:', user);
         //verifica si el usuario existe
         if (!user) {
-            throw new UnauthorizedException('Credenciales invalidas-EMAIL');
+            throw new UnauthorizedException('Credenciales inválidas');
         }
         // 2️⃣ Compara la contraseña enviada con la almacenada
         const isPasswordValid = await bcrypt.compare(data.password, user.password);
 
         // si la contraseña no es válida, lanza una excepción
         if (!isPasswordValid) {
-            throw new UnauthorizedException('Credenciales invalidas-PASSWORD');
+            throw new UnauthorizedException('Credenciales inválidas');
         }
 
         // Si las credenciales son válidas, genera un token JWT
@@ -93,5 +92,33 @@ export class AuthService {
         };
 
     }
+
+    //Funcion asincrona para actualizar la contraseña del usuario
+    async updatePassword(data:RecoverPasswordDTO){
+        console.log("Contraseña recibida: ", data.password); 
+
+        const dataUser=await this.userRepo.findOne({where:{email:data.email}}); 
+        //Valida si el usuario existe en el sistema, ademas de recuperar su información
+        if(!dataUser){
+            throw new UnauthorizedException('Credenciales inválidas');
+        }
+
+        // 2️⃣ Compara la contraseña enviada con la almacenada
+        const isPasswordValid = await bcrypt.compare(data.password, dataUser.password);
+        // si la contraseña no es válida, lanza una excepción
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('La contraseña ingresada no corresponde a la almacenada');
+        }
+
+        //Si la contraseña si es valida, encripta la nueva contraseña con bcrypt
+        const hashedNewPassword= await bcrypt.hash(data.newPassword, 10);
+        //Actualiza la contraseña del usuario
+        await this.userRepo.update(dataUser.id, {password:hashedNewPassword});
+
+        return{
+            message:'La contraseña ha sido actualizada correctamente',
+        }
+    }
+
 }
 

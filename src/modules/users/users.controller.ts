@@ -47,11 +47,11 @@ export class UsersController {
     return this.usersService.update(id, body);
   }
 
-  // ✅ ADMIN → eliminar usuarios
+  // ✅ ADMIN → actualizar el estado del usuario
   @Delete(':id')
   @Roles(RolesEnum.ADMIN)
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.remove(id);
+  inactiveUser(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.inactiveUser(id);
   }
 
   // ✅ USER, PREMIUM y ADMIN → obtener su propio perfil

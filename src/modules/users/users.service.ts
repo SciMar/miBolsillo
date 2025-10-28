@@ -68,12 +68,20 @@ export class UsersService { //Servicio para manejar los usuarios
             return this.findOne(id);
         }
     
-    //elimina un usuario por id
-    async remove(id: number){ //elimina un usuario por id
-        const result = await this.usersRepo.delete(id); 
-        if (result.affected === 0) throw new NotFoundException('Usuario no encontrado')
-        return {delete: true} //elimina el usuario del array
-    }   
+    //Inactivar un usuario por id
+    async inactiveUser(id:number){
+        //Actualiza el estado del usuario en el sistema
+        const inactiveUser=await this.usersRepo.update(id, {isActive:false});
+
+        //Evalua si alguna de los registros se vio afectado, sino devuelve una excepcion
+        if(inactiveUser.affected===0){
+            throw new NotFoundException(`El usuario con id ${id} no existe`); 
+        }else{
+            //Si se realizo la actualizacion, se consulta la informacion del usuario 
+            const user=await this.usersRepo.findOne({where:{id}});
+            return{message:`El usuario ${user.name} ha sido inactivado exitosamente`}
+        }
+    } 
 
     // Busca un usuario por su ID
     async findOne(id: number) {

@@ -4,6 +4,7 @@ import { LoginUserDTO } from '../users/dto/login-user.dto';
 import { CreateUserDTO } from '../users/dto/create-user.dto';
 import { JwtAuthGuard } from './guards/jwt.guard';
 import { ApiTags } from '@nestjs/swagger';
+import { RecoverPasswordDTO } from '../users/dto/recover-password.dto';
 
 // Controlador de Autenticación
 @ApiTags('auth')
@@ -22,6 +23,12 @@ export class AuthController {
     @Post('login')
     async login(@Body() data: LoginUserDTO) {
         return this.authService.login(data);
+    }
+
+    //Actualizar contraseña
+    @Post('updatePassword')
+    async updatePassword(@Body() data:RecoverPasswordDTO){
+        return this.authService.updatePassword(data);
     }
 
     //profile
