@@ -23,10 +23,11 @@ export class CreateBudgetDto {
   monto?: number;
 
   // userId ahora está en el DTO para que no lo elimine el whitelist
+  /* COMENTADO PARA NO PEDIRLO EN LA CREACIÓN DE BUDGET
   @Type(() => Number)
   @IsInt({ message: 'userId debe ser un entero' })
   @Min(1, { message: 'userId debe ser mayor o igual a 1' })
-  userId: number;
+  userId: number; */
 
   @IsOptional()
   @Type(() => Number)

@@ -1,7 +1,4 @@
-import { 
-  Controller, Get, Post, Patch, Delete, Param, Body, 
-  Query, ParseIntPipe, UseGuards, Req 
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, ParseIntPipe, UseGuards, Req } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
@@ -11,46 +8,52 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesEnum } from '../users/entities/user.entity';
 import { User } from '../auth/decorators/user.decorator'; 
 
-// 🔒 Aplicamos guards globales al controller: JWT y Roles
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('transactions') // Prefijo de rutas: /transactions
+@Controller('transactions')
 export class TransactionsController {
-  constructor(private readonly service: TransactionsService) {} // Inyectamos el servicio
+  constructor(private readonly service: TransactionsService) {}
 
-  // Crear una nueva transacción
+  // ✅ 1. POST - crear transacción
   @Post()
-  @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN) // Solo roles autorizados
   async create(
-    @Body() dto: CreateTransactionDto, // Datos de la transacción
-    @User() user: any // Usuario autenticado (traído desde JWT)
+    @Body() dto: CreateTransactionDto,
+    @User() user: any
   ) {
-    return this.service.create(dto, user); // Llamada al servicio para crear la transacción y actualizar presupuesto
+    return this.service.create(dto, user);
   }
 
-  // Obtener todas las transacciones de un usuario, opcionalmente filtradas por tipo
-  @Get('user/:userId')
+  // ✅ 2. Rutas específicas PRIMERO (con texto literal)
+  @Get('user/:userId/grouped')
+  @Roles(RolesEnum.ADMIN)
+  async findAllByUserGrouped(@Param('userId', ParseIntPipe) userId: number) {
+    return this.service.findAllByUserGrouped(userId);
+  }
+
+  // ✅ 3. my-balance (específica)
+  @Get('my-balance')
   @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
-  async findAllByUser(
-    @Param('userId', ParseIntPipe) userId: number, // ID del usuario
-    @Query('type') type?: 'income' | 'expense' // Filtro opcional por tipo de transacción
-  ) {
-    return this.service.findAllByUser(userId, { type }); // Devuelve todas las transacciones filtradas
+  async getMyBalance(@Req() req) {
+    console.log('Usuario autenticado:', req.user);
+    const userId = req.user.id;
+    return this.service.getBalance(userId);
   }
 
-  // Obtener balance general de un usuario
+  // ✅ 4. balance/:userId (específica con parámetro)
   @Get('balance/:userId')
-  @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
+  @Roles(RolesEnum.ADMIN)
   async getBalance(@Param('userId', ParseIntPipe) userId: number) {
-    return this.service.getBalance(userId); // Calcula ingresos - gastos
+    return this.service.getBalance(userId);
   }
 
-  // Obtener una transacción específica por ID
+  // ✅ 5. Ruta genérica :id AL FINAL (captura todo lo demás)
   @Get(':id')
-  @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
+  @Roles(RolesEnum.ADMIN)
   async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id); // Devuelve la transacción solicitada
+    return this.service.findOne(id);
   }
 
+  
+/*
   // Actualizar una transacción existente
   @Patch(':id')
   @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
@@ -66,5 +69,5 @@ export class TransactionsController {
   @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id); // Elimina transacción y ajusta el presupuesto
-  }
+  }*/
 }

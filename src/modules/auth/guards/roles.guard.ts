@@ -11,9 +11,23 @@ export class RolesGuard implements CanActivate{
             context.getClass(),
         ])
 
+        console.log('=== ROLES GUARD DEBUG ===');
+        console.log('ROLES_KEY:', ROLES_KEY);
+        console.log('Roles requeridos:', requiredRoles);
+        console.log('Tipo de requiredRoles:', typeof requiredRoles, Array.isArray(requiredRoles));
+        
         if(!requiredRoles){return true}; 
 
         const {user}=context.switchToHttp().getRequest();
+        
+        console.log('Usuario completo:', user);
+        console.log('Rol del usuario:', user?.role);
+        console.log('Tipo de user.role:', typeof user?.role);
+        console.log('¿Incluye?:', requiredRoles.includes(user?.role));
+        console.log('Comparación individual:');
+        requiredRoles.forEach(r => console.log(`  "${r}" === "${user?.role}":`, r === user?.role));
+        console.log('========================');
+        
         if(!user){throw new ForbiddenException("El usuario no está autenticado en el sistema")}
 
         if(!requiredRoles.includes(user.role)){

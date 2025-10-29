@@ -32,30 +32,31 @@ export class BudgetsService {
     return { name, amount };
   }
   // --------------------------------------------------------
+  
+  async createForUser(dto: CreateBudgetDto, user: any) {
+  const { name, amount } = this.pickNameAndAmount(dto);
 
-  async create(dto: CreateBudgetDto) {
-    const { name, amount } = this.pickNameAndAmount(dto);
-
-    if (!name) throw new BadRequestException('El campo name (o nombre) es obligatorio');
-    if (amount === undefined || amount === null) {
-      throw new BadRequestException('El campo amount (o monto) es obligatorio');
-    }
-    if (dto.startDate && dto.endDate && new Date(dto.endDate) < new Date(dto.startDate)) {
-      throw new BadRequestException('La fecha de fin debe ser mayor o igual a la fecha de inicio');
-    }
-
-    const budget = this.repo.create({
-      name,
-      amount,
-      userId: dto.userId,
-      categoryId: dto.categoryId ?? null,
-      startDate: dto.startDate ? new Date(dto.startDate) : null,
-      endDate: dto.endDate ? new Date(dto.endDate) : null,
-    });
-
-    const saved = await this.repo.save(budget);
-    return this.toSpanishResponse(saved);
+  if (!name) throw new BadRequestException('El campo name (o nombre) es obligatorio');
+  if (amount === undefined || amount === null) {
+    throw new BadRequestException('El campo amount (o monto) es obligatorio');
   }
+
+  if (dto.startDate && dto.endDate && new Date(dto.endDate) < new Date(dto.startDate)) {
+    throw new BadRequestException('La fecha de fin debe ser mayor o igual a la fecha de inicio');
+  }
+
+  const budget = this.repo.create({
+    name,
+    amount,
+    userId: user.id, // ← se toma del token, NO del body
+    categoryId: dto.categoryId ?? null,
+    startDate: dto.startDate ? new Date(dto.startDate) : null,
+    endDate: dto.endDate ? new Date(dto.endDate) : null,
+  });
+
+  const saved = await this.repo.save(budget);
+  return this.toSpanishResponse(saved);
+}
 
   findAllByUser(userId: number, filters?: { categoryId?: number; from?: string; to?: string }) {
     const where: FindOptionsWhere<Budget> = { userId };
@@ -93,7 +94,7 @@ export class BudgetsService {
     Object.assign(entity, {
       ...(name !== undefined ? { name } : {}),
       ...(amount !== undefined ? { amount } : {}),
-      ...(dto.userId !== undefined ? { userId: dto.userId } : {}),
+      //...(dto.userId !== undefined ? { userId: dto.userId } : {}),//
       ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
       ...(dto.startDate !== undefined ? { startDate: dto.startDate ? new Date(dto.startDate) : null } : {}),
       ...(dto.endDate !== undefined ? { endDate: dto.endDate ? new Date(dto.endDate) : null } : {}),
@@ -128,4 +129,7 @@ async buscarPorNombre(texto: string) {
     : { mensaje: 'No se encontraron presupuestos con ese nombre' };
 }
 
+
 }
+
+
