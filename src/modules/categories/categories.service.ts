@@ -11,13 +11,8 @@ export class CategoriesService {
         @InjectRepository(Category)
         private categoryRepo: Repository<Category>
     ){}
-
-    // =====================
-    // CONSULTAS GENERALES
-    // =====================
-
     // Ver todas las categorías activas con contador de transacciones
-    // ROLES: USER, PREMIUM, ADMIN
+    // ROLES: USER, PREMIUM
     getCategory() {
         return this.categoryRepo.createQueryBuilder('categories')
             .where('categories.status = :status', { status: true })

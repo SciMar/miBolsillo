@@ -18,7 +18,7 @@ export class CategoriesController {
 
     // Obtener todas las categorías activas
     @Get()
-    @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
+    @Roles(RolesEnum.USER, RolesEnum.PREMIUM)
     getCategories() {
         return this.categoryService.getCategory();
     }
@@ -41,9 +41,15 @@ export class CategoriesController {
     // ⭐ Esta ruta debe ir AL FINAL de los GET
     // Obtener categoría por ID
     @Get(':id')
-    @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
+    @Roles( RolesEnum.PREMIUM, RolesEnum.ADMIN)
     getId(@Param('id', ParseIntPipe) id: number) {
         return this.categoryService.getById(id);
+    }
+
+    @Get('name/:name')
+     @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
+    getName(@Param('name')name:string){
+        return this.categoryService.getByName(name)
     }
 
     // =====================
