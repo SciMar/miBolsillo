@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, Delete, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, Query, ParseIntPipe, UseGuards, Req } from '@nestjs/common';
 import { BudgetsService } from './budgets.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
@@ -14,8 +14,9 @@ export class BudgetsController {
   constructor(private readonly service: BudgetsService) {}
 
   @Post()
-  create(@Body() dto: CreateBudgetDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateBudgetDto, @Req() req) {
+    const user = req.user; 
+    return this.service.createForUser(dto, user);
   }
 
   // /budgets/user/1?categoryId=3

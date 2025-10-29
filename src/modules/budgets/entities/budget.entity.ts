@@ -1,6 +1,6 @@
 import {
   Entity, PrimaryGeneratedColumn, Column,
-  ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn
+  ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Category } from '../../categories/entities/category.entity';
@@ -42,4 +42,8 @@ export class Budget {
   // budget.entity.ts
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   remainingAmount: number;
+
+  //Relación con categorías
+  @OneToMany(() => Category, category => category.budget)
+  categories: Category[];
 }

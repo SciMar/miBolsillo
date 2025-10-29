@@ -19,5 +19,8 @@ export class Category {
 
   @OneToMany(() => Transaction, (transaction) => transaction.category)
   transactions: Transaction[]
+
+  @ManyToOne(() => Budget, budget => budget.categories)
+  budget: Budget;
   
 }

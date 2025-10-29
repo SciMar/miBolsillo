@@ -1,8 +1,8 @@
 // src/modules/transactions/entities/transaction.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Category } from '../../categories/entities/category.entity';
-
+import { Budget } from 'src/modules/budgets/entities/budget.entity';
 
 @Entity()
 export class Transaction {
