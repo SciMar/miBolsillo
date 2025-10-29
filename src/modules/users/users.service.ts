@@ -55,13 +55,23 @@ export class UsersService { //Servicio para manejar los usuarios
             throw new ForbiddenException('No se puede cambiar el rol de un administrador');
         }
 
-        // 3️⃣ Actualiza el rol
+         // 3️⃣ Actualiza el rol
         await this.usersRepo.update(id, { role: newRole });
 
-        // 4️⃣ Retorna el usuario actualizado
-        return this.findOne(id);
-    }
+        // 4️⃣ Busca el usuario actualizado
+        const updatedUser = await this.findOne(id);
 
+        // 5️⃣ Retorna un mensaje personalizado
+        return {
+            message: `✅ Rol actualizado con éxito`,
+            user: {
+            name: updatedUser.name,
+            newRole: updatedUser.role,
+            },
+        }
+    
+    }
+    
     //3️⃣actualiza un usuario por id
     async update(id: number, UpdateUser: UpdateUserDTO) {
         await this.usersRepo.update(id, UpdateUser)

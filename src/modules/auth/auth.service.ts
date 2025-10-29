@@ -46,11 +46,9 @@ export class AuthService {
     
     // 5️⃣ Retorna un mensaje simple y los datos principales del usuario
     return {
-        message: 'Usuario registrado correctamente', 
+        message: 'Bienvenid@ a Mi Bolsillo', 
         user: {
-            id: userCreated.id, 
             name: userCreated.name,
-            email: userCreated.email,
             role: userCreated.role
         }
     };

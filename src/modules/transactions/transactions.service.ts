@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException
+ } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Transaction } from './entities/transaction.entity';
@@ -7,6 +8,7 @@ import { Category } from '../categories/entities/category.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { User } from '../users/entities/user.entity';
+import { RolesEnum } from '../users/entities/user.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -31,53 +33,51 @@ export class TransactionsService {
  async create(dto: CreateTransactionDto, user: User) {
   const { amount, type, categoryId } = dto;
 
-  // 🧩 Validar tipo de transacción
+  // Validar tipo de transacción
   if (!['income', 'expense'].includes(type)) {
     throw new BadRequestException('Tipo de transacción inválido');
   }
 
-  // 🧩 Verificar que exista la categoría
+  // Verificar que exista la categoría
   const category = await this.dataSource.getRepository(Category).findOne({
     where: { id: categoryId },
   });
+  if (!category) throw new NotFoundException('La categoría no existe');
 
-  if (!category) {
-    throw new NotFoundException('La categoría no existe');
-  }
-
-  // 🧾 Crear la transacción
+  // Crear la transacción
   const transaction = this.transactionRepository.create({
     ...dto,
-    user, // se guarda internamente, pero no se mostrará en la respuesta
+    user,
     category,
   });
-
   await this.transactionRepository.save(transaction);
 
-  // 💰 Buscar el presupuesto asociado a la categoría
-  const budget = await this.budgetRepository.findOne({
-    where: { categoryId, userId: user.id },
-  });
+  // ⚡ Ajustar presupuesto solo si es gasto y existe presupuesto
+  let saldoActual: number | null = null;
+  if (type === 'expense') {
+    const budget = await this.budgetRepository.findOne({
+      where: { categoryId, userId: user.id },
+    });
 
-  let saldoActual = null;
+    if (budget) {
+      // Calcular total de gastos en esta categoría
+      const { totalGastos } = await this.transactionRepository
+        .createQueryBuilder('t')
+        .select('COALESCE(SUM(t.amount), 0)', 'totalGastos')
+        .where('t.userId = :userId', { userId: user.id })
+        .andWhere('t.categoryId = :categoryId', { categoryId })
+        .andWhere('t.type = :type', { type: 'expense' })
+        .getRawOne();
 
-  // 💸 Ajustar saldo solo si existe un presupuesto
-  if (budget) {
-    const currentRemaining = Number(budget.remainingAmount ?? budget.amount);
+      const saldoRestante = Number(budget.amount) - Number(totalGastos);
+      budget.remainingAmount = saldoRestante;
+      await this.budgetRepository.save(budget);
 
-    // Si es gasto, restamos; si es ingreso, sumamos
-    const nuevoSaldo =
-      type === 'expense'
-        ? currentRemaining - Number(amount)
-        : currentRemaining + Number(amount);
-
-    budget.remainingAmount = nuevoSaldo;
-    await this.budgetRepository.save(budget);
-
-    saldoActual = nuevoSaldo;
+      saldoActual = saldoRestante;
+    }
   }
 
-  // 🟢 Respuesta simplificada
+  // Respuesta final
   return {
     mensaje: 'Transacción exitosa',
     registro: type === 'income' ? 'Ingreso' : 'Gasto',
@@ -86,8 +86,10 @@ export class TransactionsService {
     saldoActual:
       saldoActual !== null
         ? `Su saldo actual para "${category.name}" es de ${saldoActual}`
-        : `No hay presupuesto asociado a la categoría "${category.name}"`,
-  }
+        : type === 'expense'
+        ? `No hay presupuesto asociado a la categoría "${category.name}"`
+        : 'Ingreso registrado correctamente',
+  };
 }
   
 
@@ -210,49 +212,117 @@ export class TransactionsService {
     balance: balance,
     };
   }
-}
-/*  
+
   // ===========================================================
   // ✏️ ACTUALIZAR UNA TRANSACCIÓN
   // Endpoint: PATCH /transactions/:id
   // ===========================================================
-  async update(id: number, dto: UpdateTransactionDto) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+async update(id: number, dto: UpdateTransactionDto, user: User) {
+  const queryRunner = this.dataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
 
-    try {
-      const transaction = await queryRunner.manager.findOne(Transaction, {
-        where: { id },
-        relations: ['user', 'category'],
-      });
+  try {
+    // 1️⃣ Buscar la transacción
+    const transaction = await queryRunner.manager.findOne(Transaction, {
+      where: { id },
+      relations: ['user', 'category'],
+    });
+    if (!transaction) throw new NotFoundException('Transacción no encontrada');
 
-      if (!transaction) throw new NotFoundException('Transacción no encontrada');
-
-      // Si se modifica el monto o tipo, se revierte el efecto anterior en presupuesto
-      if ((dto.amount || dto.type) && transaction.type === 'expense' && transaction.category) {
-        await this.revertBudgetEffect(transaction, queryRunner);
-      }
-
-      // Actualizar los datos de la transacción
-      Object.assign(transaction, dto);
-      const updated = await queryRunner.manager.save(transaction);
-
-      // Si sigue siendo un gasto, aplicar el nuevo efecto sobre presupuesto
-      if (updated.type === 'expense' && updated.category) {
-        await this.applyBudgetEffect(updated, queryRunner);
-      }
-
-      await queryRunner.commitTransaction();
-      return updated;
-
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
+    // 2️⃣ Validación de propietario (solo dueño o Admin)
+    if (user.role !== 'admin' && transaction.user.id !== user.id) {
+      throw new ForbiddenException('No tienes permiso para actualizar esta transacción');
     }
+
+    // 3️⃣ Revertir efecto anterior sobre presupuesto si cambia monto o tipo
+    if ((dto.amount !== undefined || dto.type) && transaction.category) {
+      await this.revertBudgetEffect(transaction, queryRunner);
+    }
+
+    // 4️⃣ Actualizar datos de la transacción
+    Object.assign(transaction, dto);
+    const updated = await queryRunner.manager.save(transaction);
+
+    // 5️⃣ Aplicar nuevo efecto sobre presupuesto
+    let saldoActual: number | null = null;
+    if (updated.category) {
+      saldoActual = await this.applyBudgetEffect(updated, queryRunner);
+    }
+
+    await queryRunner.commitTransaction();
+
+    // 6️⃣ Respuesta resumida y segura
+    return {
+      mensaje: 'Transacción actualizada con éxito',
+      transaccion: {
+        id: updated.id,
+        description: updated.description,
+        monto: Number(updated.amount),
+        tipo: updated.type === 'income' ? 'Ingreso' : 'Gasto',
+        fecha: updated.date,
+        categoria: updated.category?.name || 'Sin categoría',
+      },
+      saldoActual:
+        saldoActual !== null
+          ? `Su saldo actual para "${updated.category?.name}" es de ${saldoActual}`
+          : updated.type === 'expense'
+          ? `No hay presupuesto asociado a la categoría "${updated.category?.name}"`
+          : 'Ingreso registrado correctamente',
+    };
+  } catch (error) {
+    await queryRunner.rollbackTransaction();
+    throw error;
+  } finally {
+    await queryRunner.release();
   }
+}
+
+// ===========================================================
+// Helper: revertir efecto anterior sobre presupuesto
+// Devuelve el presupuesto actualizado pero no lo imprime
+// ===========================================================
+private async revertBudgetEffect(transaction: Transaction, queryRunner: any) {
+  const budget = await queryRunner.manager.findOne(Budget, {
+    where: { userId: transaction.user.id, categoryId: transaction.category.id },
+  });
+  if (!budget) return;
+
+  const currentRemaining = Number(budget.remainingAmount);
+  const amount = Number(transaction.amount);
+
+  if (transaction.type === 'expense') {
+    budget.remainingAmount = Math.floor(currentRemaining + amount);
+  } else {
+    budget.remainingAmount = Math.floor(currentRemaining - amount);
+  }
+
+  await queryRunner.manager.save(budget);
+}
+
+// ===========================================================
+// Helper: aplicar efecto sobre presupuesto
+// Retorna el saldo actual de la categoría
+// ===========================================================
+private async applyBudgetEffect(transaction: Transaction, queryRunner: any): Promise<number | null> {
+  const budget = await queryRunner.manager.findOne(Budget, {
+    where: { userId: transaction.user.id, categoryId: transaction.category.id },
+  });
+  if (!budget) return null;
+
+  const currentRemaining = Number(budget.remainingAmount);
+  const amount = Number(transaction.amount);
+
+  if (transaction.type === 'expense') {
+    budget.remainingAmount = Math.floor(currentRemaining - amount);
+  } else {
+    budget.remainingAmount = Math.floor(currentRemaining + amount);
+  }
+
+  await queryRunner.manager.save(budget);
+  
+  return Math.floor(Number(budget.remainingAmount));
+}
 
   // ===========================================================
   // 🗑️ ELIMINAR UNA TRANSACCIÓN
@@ -288,84 +358,5 @@ export class TransactionsService {
     } finally {
       await queryRunner.release();
     }
-  }*/
-
-  
-/*
-  // ===========================================================
-  // 🔄 DISTRIBUIR REMANENTE ENTRE PRESUPUESTOS
-  // Endpoint: POST /transactions/distribute/:userId
-  // ===========================================================
-  async distributeRemainingToBudgets(userId: number) {
-    const balance = await this.getBalance(userId);
-    const remaining = balance.balance;
-
-    // Validar que haya remanente positivo
-    if (remaining <= 0) {
-      throw new BadRequestException('No hay remanente positivo para distribuir');
-    }
-
-    const budgets = await this.budgetRepository.find({ where: { userId } });
-
-    if (budgets.length === 0) {
-      throw new BadRequestException('El usuario no tiene presupuestos creados');
-    }
-
-    // Distribuir el saldo restante equitativamente entre presupuestos
-    const amountPerBudget = remaining / budgets.length;
-
-    for (const budget of budgets) {
-      budget.remainingAmount = (+budget.remainingAmount || 0) + amountPerBudget;
-      await this.budgetRepository.save(budget);
-    }
-
-    return {
-      message: 'Remanente distribuido exitosamente',
-      totalDistributed: remaining,
-      budgetsUpdated: budgets.length,
-      amountPerBudget,
-    };
   }
-
-  // ===========================================================
-  // ⚙️ MÉTODOS PRIVADOS AUXILIARES
-  // ===========================================================
-
-  // 🔁 Revertir efecto del gasto en presupuesto (al eliminar o editar)
-  private async revertBudgetEffect(transaction: Transaction, queryRunner: any) {
-    const budget = await queryRunner.manager.findOne(Budget, {
-      where: {
-        userId: transaction.user.id,
-        categoryId: transaction.category.id,
-      },
-    });
-
-    if (budget) {
-      // Devolver el monto al presupuesto original
-      budget.remainingAmount = (+budget.remainingAmount || 0) + +transaction.amount;
-      await queryRunner.manager.save(budget);
-    }
-  }
-
-  // 💸 Aplicar efecto de gasto sobre presupuesto
-  private async applyBudgetEffect(transaction: Transaction, queryRunner: any) {
-    const budget = await queryRunner.manager.findOne(Budget, {
-      where: {
-        userId: transaction.user.id,
-        categoryId: transaction.category.id,
-      },
-    });
-
-    if (budget) {
-      const currentRemaining = +budget.remainingAmount || +budget.amount;
-
-      // Validar fondos disponibles
-      if (currentRemaining < +transaction.amount) {
-        throw new BadRequestException('Presupuesto insuficiente');
-      }
-
-      // Restar el monto gastado
-      budget.remainingAmount = currentRemaining - +transaction.amount;
-      await queryRunner.manager.save(budget);
-    }
-  }*/
+}
