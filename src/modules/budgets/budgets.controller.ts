@@ -7,7 +7,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesEnum } from '../users/entities/user.entity';
 
-//@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles (RolesEnum.PREMIUM, RolesEnum.ADMIN)
 @Controller('budgets')
 export class BudgetsController {
