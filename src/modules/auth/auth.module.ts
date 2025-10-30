@@ -8,8 +8,7 @@ import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { ApiTags } from '@nestjs/swagger';
-// Módulo
-// T de Autenticación
+// Módulo de Autenticación
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}), // Carga las variables de entorno desde el archivo .env
@@ -20,7 +19,7 @@ import { ApiTags } from '@nestjs/swagger';
       inject: [ConfigService], // Inyecta el servicio de configuración
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET_KEY'), // Obtiene la clave secreta desde las variables de entorno
-        signOptions: { expiresIn: config.get<number>('JWT_EXPIRES_IN') || '1h'} // Configura la expiración del token
+        signOptions: { expiresIn: config.get<number>('JWT_EXPIRES') || '1h'} // Configura la expiración del token
       }) // Configura el módulo JWT de forma asíncrona
     })
   ],

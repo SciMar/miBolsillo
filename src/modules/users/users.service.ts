@@ -4,6 +4,7 @@ import { CreateUserDTO } from './dto/create-user.dto';
 import { UpdateUserDTO } from './dto/update-user.dto';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import * as bcrypt from 'bcrypt';
 @Injectable()
 export class UsersService { //Servicio para manejar los usuarios
     /**
@@ -34,8 +35,10 @@ export class UsersService { //Servicio para manejar los usuarios
     // Crea una nueva entidad User con los datos del DTO
     //    - role: si no se envía, se asigna 'user' por defecto
     //    - isActive: por defecto activo
+    const hashedPassword = await bcrypt.hash(newUser.password, 10);
     const userEntity = this.usersRepo.create({
         ...newUser,
+        password:hashedPassword,
         isActive: true,
     });
 
