@@ -5,15 +5,19 @@ import { Budget } from './entities/budget.entity';
 import { CreateBudgetDto } from './dto/create-budget.dto';
 import { UpdateBudgetDto } from './dto/update-budget.dto';
 
+/**
+ * Maneja la lógica de negocio relacionada con los presupuestos.
+ * Incluye creación, lectura, actualización, eliminación y búsqueda.
+ */
 @Injectable()
 export class BudgetsService {
   constructor(@InjectRepository(Budget) private readonly repo: Repository<Budget>) {}
 
-  // ---- helpers de formato (sin crear archivos nuevos) ----
+  /** Formatea una fecha a formato 'YYYY-MM-DD' o null si no existe. */  
   private fmtDate(d?: Date | null): string | null {
     return d ? new Date(d).toISOString().slice(0, 10) : null; // YYYY-MM-DD
   }
-
+  /** Transforma un presupuesto al formato de respuesta en español. */
   private toSpanishResponse(b: Budget) {
     return {
       id: b.id,
@@ -25,14 +29,17 @@ export class BudgetsService {
     };
   }
 
-  /** Obtiene name/amount aceptando también nombre/monto */
+  /** Obtiene name/amount permitiendo nombre/monto como alternativa. */
   private pickNameAndAmount(dto: Partial<CreateBudgetDto | UpdateBudgetDto>) {
     const name = (dto as any).name ?? (dto as any).nombre;
     const amount = (dto as any).amount ?? (dto as any).monto;
     return { name, amount };
   }
-  // --------------------------------------------------------
-  
+
+  /** 
+   * Crea un nuevo presupuesto asociado al usuario autenticado.
+   * Valida campos requeridos y el orden correcto de fechas antes de guardar.
+   */
   async createForUser(dto: CreateBudgetDto, user: any) {
   const { name, amount } = this.pickNameAndAmount(dto);
 
@@ -57,7 +64,10 @@ export class BudgetsService {
   const saved = await this.repo.save(budget);
   return this.toSpanishResponse(saved);
 }
-
+  /*
+   * Obtiene todos los presupuestos de un usuario.
+   * Permite aplicar filtros por categoría y ordena por fecha de creación.
+   */  
   findAllByUser(userId: number, filters?: { categoryId?: number; from?: string; to?: string }) {
     const where: FindOptionsWhere<Budget> = { userId };
     if (typeof filters?.categoryId === 'number') where.categoryId = filters.categoryId;
@@ -68,19 +78,30 @@ export class BudgetsService {
     }).then(items => items.map(b => this.toSpanishResponse(b)));
   }
 
+  /** 
+   * Obtiene todos los presupuestos del sistema.
+   * Usado generalmente por administradores.
+   */
   findAll() {
   return this.repo.find({
     order: { startDate: 'DESC', createdAt: 'DESC' },
   }).then(items => items.map(b => this.toSpanishResponse(b)));
 }
 
-
+  /** 
+   * Busca un presupuesto por su ID.
+   * Lanza error si no existe el registro.
+   */
   async findOne(id: number) {
     const b = await this.repo.findOne({ where: { id } });
     if (!b) throw new NotFoundException('No se encontró el presupuesto');
     return this.toSpanishResponse(b);
   }
 
+  /** 
+   * Actualiza los datos de un presupuesto existente.
+   * Verifica que las fechas sean válidas antes de guardar los cambios.
+   */
   async update(id: number, dto: UpdateBudgetDto) {
     const entity = await this.repo.findOne({ where: { id } });
     if (!entity) throw new NotFoundException('No se encontró el presupuesto');
@@ -104,6 +125,10 @@ export class BudgetsService {
     return this.toSpanishResponse(saved);
   }
 
+  /** 
+   * Elimina un presupuesto existente por su ID.
+   * Lanza error si el registro no existe.
+   */
   async remove(id: number) {
     const b = await this.repo.findOne({ where: { id } });
     if (!b) throw new NotFoundException('No se encontró el presupuesto');
@@ -111,7 +136,11 @@ export class BudgetsService {
     await this.repo.remove(b);
     return { mensaje: 'Presupuesto eliminado' };
   }
-  // 🔍 Buscar presupuestos por nombre
+
+  /**
+   * Busca presupuestos cuyo nombre contenga el texto indicado.
+   * Devuelve resultados o un mensaje si no hay coincidencias.
+   */
 async buscarPorNombre(texto: string) {
   if (!texto || !texto.trim()) {
     return { mensaje: 'Debe ingresar un texto para buscar' };

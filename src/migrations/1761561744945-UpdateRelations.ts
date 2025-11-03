@@ -2,7 +2,9 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 
 export class UpdateRelations1761561744945 implements MigrationInterface {
     name = 'UpdateRelations1761561744945'
-
+/*
+* Eliminación de la clave foranea, tabla categorias-> usuarios
+*/
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE \`categories\` DROP FOREIGN KEY \`FK_13e8b2a21988bec6fdcbb1fa741\``);
         await queryRunner.query(`ALTER TABLE \`categories\` DROP COLUMN \`userId\``);

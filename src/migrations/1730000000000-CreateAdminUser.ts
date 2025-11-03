@@ -3,7 +3,7 @@ import * as bcrypt from 'bcrypt';
 
 export class CreateAdminUser1730000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // 1️⃣ Verifica si ya existe un admin
+    /* Verifica si ya existe un admin*/
     const existingAdmin = await queryRunner.query(`
       SELECT * FROM user WHERE email = 'admin@example.com' LIMIT 1
     `);
@@ -13,10 +13,10 @@ export class CreateAdminUser1730000000000 implements MigrationInterface {
       return;
     }
 
-    // 2️⃣ Hashea la contraseña
+    /* Hashea la contraseña*/
     const hashedPassword = await bcrypt.hash('Admin123!', 10);
 
-    // 3️⃣ Inserta el usuario administrador
+    /* Inserta el usuario administrador*/
     await queryRunner.query(`
       INSERT INTO user (name, email, password, role, isActive)
       VALUES (?, ?, ?, ?, ?)
@@ -28,7 +28,7 @@ export class CreateAdminUser1730000000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Revierte la migración eliminando el admin
+    /* Revierte la migración eliminando el admin*/
     await queryRunner.query(`
       DELETE FROM user WHERE email = 'admin@example.com'
     `);

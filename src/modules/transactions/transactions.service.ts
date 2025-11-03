@@ -10,41 +10,44 @@ import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { User } from '../users/entities/user.entity';
 import { RolesEnum } from '../users/entities/user.entity';
 
+
+/* 
+   *Gestiona operaciones CRUD de transacciones (ingresos/gastos),
+   *ajustando presupuestos según el tipo y categoría.
+   */
 @Injectable()
 export class TransactionsService {
   constructor(
-    // Repositorio para manejar transacciones (ingresos/gastos)
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
 
-    // Repositorio para manejar presupuestos
     @InjectRepository(Budget)
     private readonly budgetRepository: Repository<Budget>,
 
-    // Fuente de datos para crear transacciones SQL seguras (QueryRunner)
+    /* Fuente de datos para crear transacciones SQL seguras (QueryRunner)*/
     private readonly dataSource: DataSource,
   ) {}
 
-// ===========================================================
-// 🟢 CREAR TRANSACCIÓN
-// Endpoint: POST /transactions
-// ===========================================================
+/*
+  *Crea un ingreso o gasto, valida tipo y categoría,
+  * y actualiza el presupuesto si aplica.
+*/
  
  async create(dto: CreateTransactionDto, user: User) {
   const { amount, type, categoryId } = dto;
 
-  // Validar tipo de transacción
+  /* Validar tipo de transacción*/
   if (!['income', 'expense'].includes(type)) {
     throw new BadRequestException('Tipo de transacción inválido');
   }
 
-  // Verificar que exista la categoría
+  /* Verificar que exista la categoría*/
   const category = await this.dataSource.getRepository(Category).findOne({
     where: { id: categoryId },
   });
   if (!category) throw new NotFoundException('La categoría no existe');
 
-  // Crear la transacción
+  /* Crear la transacción*/
   const transaction = this.transactionRepository.create({
     ...dto,
     user,
@@ -52,7 +55,7 @@ export class TransactionsService {
   });
   await this.transactionRepository.save(transaction);
 
-  // ⚡ Ajustar presupuesto solo si es gasto y existe presupuesto
+  /* Ajustar presupuesto solo si es gasto y existe presupuesto*/
   let saldoActual: number | null = null;
   if (type === 'expense') {
     const budget = await this.budgetRepository.findOne({
@@ -60,7 +63,7 @@ export class TransactionsService {
     });
 
     if (budget) {
-      // Calcular total de gastos en esta categoría
+      /* Calcular total de gastos en esta categoría*/
       const { totalGastos } = await this.transactionRepository
         .createQueryBuilder('t')
         .select('COALESCE(SUM(t.amount), 0)', 'totalGastos')
@@ -77,7 +80,7 @@ export class TransactionsService {
     }
   }
 
-  // Respuesta final
+  /* Respuesta final*/
   return {
     mensaje: 'Transacción exitosa',
     registro: type === 'income' ? 'Ingreso' : 'Gasto',
@@ -93,13 +96,11 @@ export class TransactionsService {
 }
   
 
-  // ===========================================================
-  // 📋 OBTENER TODAS LAS TRANSACCIONES DE UN USUARIO FILTRADAS POR TIPO DE GASTO
+  /* OBTENER TODAS LAS TRANSACCIONES DE UN USUARIO FILTRADAS POR TIPO DE GASTO
   // Endpoint: GET /transactions/user/:userId?type=income|expense
-  // ===========================================================
-
+*/
   async findAllByUserGrouped(userId: number) {
-  // Obtener todas las transacciones del usuario
+  /* Obtener todas las transacciones del usuario*/
   const transactions = await this.transactionRepository.find({
     where: { user: { id: userId } },
     relations: ['category', 'user'],
@@ -112,7 +113,7 @@ export class TransactionsService {
 
   const user = transactions[0].user;
 
-  // Agrupar por tipo
+  /* Agrupar por tipo*/
   const grouped = transactions.reduce(
     (acc, tx) => {
       const simplifiedTx = {
@@ -139,10 +140,9 @@ export class TransactionsService {
   };
   }
 
-  // ===========================================================
-  // 🔍 OBTENER UNA TRANSACCIÓN POR ID (procesada en el servidor)
-  // Endpoint: GET /transactions/:id
-  // ===========================================================
+  /* OBTENER UNA TRANSACCIÓN POR ID (procesada en el servidor)
+  * Endpoint: GET /transactions/:id
+  */
   async findOne(id: number) {
     const transaction = await this.transactionRepository.findOne({
       where: { id },
@@ -151,7 +151,7 @@ export class TransactionsService {
 
     if (!transaction) throw new NotFoundException('Transacción no encontrada');
 
-    // ✅ Procesamiento en el servidor: organizar la respuesta
+    /* Procesamiento en el servidor: organizar la respuesta*/
     return {
       transaction: {
         id: transaction.id,
@@ -169,13 +169,11 @@ export class TransactionsService {
     };
   }
 
-  // ===========================================================
-  // 💰 OBTENER BALANCE GENERAL
-  // Endpoint: GET /transactions/balance/:userId
-  // ===========================================================
-  
+  /* OBTENER BALANCE GENERAL
+  * Endpoint: GET /transactions/balance/:userId
+  */  
   async getBalance(userId: number) {
-    // Calcular total de ingresos
+    /* Calcular total de ingresos*/
     const incomes = await this.transactionRepository
       .createQueryBuilder('t')
       .select('COALESCE(SUM(t.amount), 0)', 'total')
@@ -183,7 +181,7 @@ export class TransactionsService {
       .andWhere('t.type = :type', { type: 'income' })
       .getRawOne();
 
-    // Calcular total de gastos
+    /* Calcular total de gastos*/
     const expenses = await this.transactionRepository
       .createQueryBuilder('t')
       .select('COALESCE(SUM(t.amount), 0)', 'total')
@@ -195,14 +193,14 @@ export class TransactionsService {
     const totalExpense = +expenses.total || 0;
     const balance = totalIncome - totalExpense;
 
-    // Obtener datos del usuario
+    /*Obtener datos del usuario*/
   const user = await this.dataSource.getRepository(User).findOne({
     where: { id: userId },
   });
 
   if (!user) throw new NotFoundException('Usuario no encontrado');
 
-    // Retornar balance general
+    /*Retornar balance general*/
     return {
 
     userId: user.id,
@@ -213,38 +211,37 @@ export class TransactionsService {
     };
   }
 
-  // ===========================================================
-  // ✏️ ACTUALIZAR UNA TRANSACCIÓN
+  /* ACTUALIZAR UNA TRANSACCIÓN
   // Endpoint: PATCH /transactions/:id
-  // ===========================================================
+  */
 async update(id: number, dto: UpdateTransactionDto, user: User) {
   const queryRunner = this.dataSource.createQueryRunner();
   await queryRunner.connect();
   await queryRunner.startTransaction();
 
   try {
-    // 1️⃣ Buscar la transacción
+    /* Buscar la transacción*/
     const transaction = await queryRunner.manager.findOne(Transaction, {
       where: { id },
       relations: ['user', 'category'],
     });
     if (!transaction) throw new NotFoundException('Transacción no encontrada');
 
-    // 2️⃣ Validación de propietario (solo dueño o Admin)
+    /*Validación de propietario (Admin)*/
     if (user.role !== 'admin' && transaction.user.id !== user.id) {
       throw new ForbiddenException('No tienes permiso para actualizar esta transacción');
     }
 
-    // 3️⃣ Revertir efecto anterior sobre presupuesto si cambia monto o tipo
+    /* Revertir efecto anterior sobre presupuesto si cambia monto o tipo*/
     if ((dto.amount !== undefined || dto.type) && transaction.category) {
       await this.revertBudgetEffect(transaction, queryRunner);
     }
 
-    // 4️⃣ Actualizar datos de la transacción
+    /*Actualizar datos de la transacción*/
     Object.assign(transaction, dto);
     const updated = await queryRunner.manager.save(transaction);
 
-    // 5️⃣ Aplicar nuevo efecto sobre presupuesto
+    /* Aplicar nuevo efecto sobre presupuesto*/
     let saldoActual: number | null = null;
     if (updated.category) {
       saldoActual = await this.applyBudgetEffect(updated, queryRunner);
@@ -252,7 +249,7 @@ async update(id: number, dto: UpdateTransactionDto, user: User) {
 
     await queryRunner.commitTransaction();
 
-    // 6️⃣ Respuesta resumida y segura
+    /* Respuesta resumida y segura*/
     return {
       mensaje: 'Transacción actualizada con éxito',
       transaccion: {
@@ -278,10 +275,9 @@ async update(id: number, dto: UpdateTransactionDto, user: User) {
   }
 }
 
-// ===========================================================
-// Helper: revertir efecto anterior sobre presupuesto
+/* Helper: revertir efecto anterior sobre presupuesto
 // Devuelve el presupuesto actualizado pero no lo imprime
-// ===========================================================
+*/
 private async revertBudgetEffect(transaction: Transaction, queryRunner: any) {
   const budget = await queryRunner.manager.findOne(Budget, {
     where: { userId: transaction.user.id, categoryId: transaction.category.id },
@@ -300,10 +296,9 @@ private async revertBudgetEffect(transaction: Transaction, queryRunner: any) {
   await queryRunner.manager.save(budget);
 }
 
-// ===========================================================
-// Helper: aplicar efecto sobre presupuesto
+/* Helper: aplicar efecto sobre presupuesto
 // Retorna el saldo actual de la categoría
-// ===========================================================
+*/
 private async applyBudgetEffect(transaction: Transaction, queryRunner: any): Promise<number | null> {
   const budget = await queryRunner.manager.findOne(Budget, {
     where: { userId: transaction.user.id, categoryId: transaction.category.id },
@@ -324,10 +319,9 @@ private async applyBudgetEffect(transaction: Transaction, queryRunner: any): Pro
   return Math.floor(Number(budget.remainingAmount));
 }
 
-  // ===========================================================
-  // 🗑️ ELIMINAR UNA TRANSACCIÓN
+  /* ELIMINAR UNA TRANSACCIÓN
   // Endpoint: DELETE /transactions/:id
-  // ===========================================================
+*/
   async remove(id: number) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -341,12 +335,12 @@ private async applyBudgetEffect(transaction: Transaction, queryRunner: any): Pro
 
       if (!transaction) throw new NotFoundException('Transacción no encontrada');
 
-      // Si era un gasto, devolver el monto al presupuesto
+      /*Si era un gasto, devolver el monto al presupuesto*/
       if (transaction.type === 'expense' && transaction.category) {
         await this.revertBudgetEffect(transaction, queryRunner);
       }
 
-      // Eliminar la transacción
+      /* Eliminar la transacción*/
       await queryRunner.manager.remove(transaction);
       await queryRunner.commitTransaction();
 

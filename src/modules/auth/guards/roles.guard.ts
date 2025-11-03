@@ -1,10 +1,28 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common"
 import { Reflector } from "@nestjs/core"
 import {ROLES_KEY} from "../roles.decorator";
-
+/**
+ * RolesGuard:
+ * Verifica si el usuario tiene los roles necesarios para acceder
+ * a una ruta protegida mediante el decorador @Roles().
+ */
 @Injectable()
 export class RolesGuard implements CanActivate{
+    /**
+     * Constructor:
+     * Inyecta Reflector para obtener los metadatos de roles
+     * definidos en controladores o métodos.
+     * @param reflector - Permite leer los metadatos de @Roles().
+     */
     constructor (private reflector:Reflector){}
+    /**
+     * Método canActivate:
+     * Evalúa si el usuario autenticado posee un rol permitido.
+     * @param context - Contexto de ejecución actual (request HTTP).
+     * @returns true si el acceso es autorizado.
+     * @throws ForbiddenException si el usuario no está autenticado
+     * o su rol no tiene permisos.
+     */
     canActivate(context:ExecutionContext):boolean{
         const requiredRoles=this.reflector.getAllAndOverride<string[]>(ROLES_KEY,[
             context.getHandler(), 

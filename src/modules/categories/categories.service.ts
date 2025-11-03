@@ -11,8 +11,8 @@ export class CategoriesService {
         @InjectRepository(Category)
         private categoryRepo: Repository<Category>
     ){}
-    // Ver todas las categorías activas con contador de transacciones
-    // ROLES: USER, PREMIUM
+
+  /* Obtiene todas las categorías activas con el conteo de transacciones */
     getCategory() {
         return this.categoryRepo.createQueryBuilder('categories')
             .where('categories.status = :status', { status: true })
@@ -20,17 +20,16 @@ export class CategoriesService {
             .getMany();
     }
 
-    // Ver categorías activas por tipo (income/expense)
-    // ROLES: USER, PREMIUM, ADMIN
+ /* Obtiene categorías activas por tipo (income o expense) */
     getByType(type: 'income' | 'expense') {
         return this.categoryRepo.find({ 
             where: { type, status: true },
-            order: { name: 'ASC' } // ⭐ Ordenar alfabéticamente
+            order: { name: 'ASC' } //  Ordenadas alfabéticamente
         });
     }
 
-    // Ver categoría por ID
-    // ROLES: USER, PREMIUM, ADMIN
+
+  /* Busca una categoría por su ID (incluye transacciones) */
     async getById(id: number) {
         const category = await this.categoryRepo.findOne({
             where: { id },
@@ -44,8 +43,7 @@ export class CategoriesService {
         return category;
     }
 
-    // Buscar categorías activas por nombre (búsqueda parcial)
-    // ROLES: USER, PREMIUM, ADMIN
+  /* Busca categorías activas por nombre (búsqueda parcial con LIKE) */
     async getByName(name: string) {
         const categories = await this.categoryRepo.createQueryBuilder('categories')
             .where('categories.name LIKE :name', { name: `%${name}%` })
@@ -59,28 +57,21 @@ export class CategoriesService {
         
         return categories;
     }
-
-    // =====================
-    // ADMIN: GESTIÓN COMPLETA
-    // =====================
-
-    // Ver TODAS las categorías (activas e inactivas)
-    // ROLES: ADMIN
+  /* Obtiene todas las categorías (activas e inactivas) */
     getCategoryAdmi() {
         return this.categoryRepo.find({
             order: { status: 'DESC', name: 'ASC' } // ⭐ Activas primero, luego alfabético
         });
     }
 
-    // Crear nueva categoría
-    // ROLES: ADMIN
+  /* Crea una nueva categoría (solo ADMIN) */
     async createCategory(newCategory: createCategoryDTO) {
         // ⭐ Validar tipo primero (más eficiente)
         if (!['income', 'expense'].includes(newCategory.type)) {
             throw new BadRequestException('El tipo debe ser "income" o "expense"');
         }
 
-        // Verificar si ya existe una categoría con ese nombre
+        /* Verificar si ya existe una categoría con ese nombre*/
         const existingCategory = await this.categoryRepo.findOne({
             where: { name: newCategory.name }
         });
@@ -95,18 +86,14 @@ export class CategoriesService {
         return this.categoryRepo.save(categoryCreated);
     }
 
-    // Actualizar categoría
-    // ROLES: ADMIN
+  /* Actualiza una categoría existente por ID (solo ADMIN) */
     async updateCategory(id: number, updateCategory: updateCategoryDTO) {
-        // Verificar que la categoría existe
         await this.getById(id);
 
-        // ⭐ Validar tipo si viene en el update
         if (updateCategory.type && !['income', 'expense'].includes(updateCategory.type)) {
             throw new BadRequestException('El tipo debe ser "income" o "expense"');
         }
 
-        // ⭐ Verificar nombre duplicado si se está actualizando el nombre
         if (updateCategory.name) {
             const existingCategory = await this.categoryRepo.findOne({
                 where: { name: updateCategory.name }
@@ -118,11 +105,9 @@ export class CategoriesService {
                 );
             }
         }
-
-        // Realizar la actualización
         await this.categoryRepo.update(id, updateCategory);
 
-        // ⭐ Mensajes más claros y consistentes
+    /* Genera un mensaje dinámico con los cambios realizados */
         const messages: string[] = [`Categoría con id ${id} actualizada correctamente`];
         
         if (updateCategory.status === true) {
@@ -141,12 +126,11 @@ export class CategoriesService {
         };
     }
 
-    // Desactivar categoría (soft delete)
-    // ROLES: ADMIN
+
+  /* Desactiva una categoría (soft delete lógico) */
     async desactivateCategory(id: number) {
         const category = await this.getById(id);
         
-        // ⭐ Verificar si ya está desactivada
         if (!category.status) {
             throw new BadRequestException(`La categoría con id ${id} ya está desactivada`);
         }
@@ -160,11 +144,7 @@ export class CategoriesService {
         };
     }
 
-    // =====================
-    // MÉTODOS AUXILIARES (opcional)
-    // =====================
-
-    // ⭐ Verificar si una categoría puede ser eliminada (sin transacciones asociadas)
+  /* Verifica si una categoría se puede eliminar (sin transacciones) */
     async canDelete(id: number): Promise<boolean> {
         const category = await this.categoryRepo.findOne({
             where: { id },
@@ -174,8 +154,9 @@ export class CategoriesService {
         return category && category.transactions.length === 0;
     }
 
-    // ⭐ Obtener estadísticas de categorías (útil para dashboard admin)
-    async getStatistics() {
+
+  /* Obtiene estadísticas globales de las categorías */
+      async getStatistics() {
         const [total, active, income, expense] = await Promise.all([
             this.categoryRepo.count(),
             this.categoryRepo.count({ where: { status: true } }),

@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
-// 🔥 Filtro global de excepciones
+/* Filtro global de excepciones*/
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
@@ -18,7 +18,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const res = ctx.getResponse();
     const req = ctx.getRequest();
 
-    // 🔍 DEBUG: Imprime TODA la información del error
+    /*DEBUG: Imprime TODA la información del error*/
     console.log('=== ERROR CAPTURADO ===');
     console.log('Tipo:', exception?.constructor?.name);
     console.log('Mensaje:', exception?.message);
@@ -28,7 +28,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let mensaje = 'Ocurrió un error inesperado';
 
-    // 1️⃣ Manejo de HttpException (incluye UnauthorizedException, BadRequestException, etc.)
+    /* Manejo de HttpException (incluye UnauthorizedException, BadRequestException, etc.)*/
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const response: any = exception.getResponse();
@@ -41,7 +41,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           : response.message;
       }
     } 
-    // 2️⃣ Errores de base de datos MySQL
+    /* Errores de base de datos MySQL*/
     else if (exception?.code === 'ER_NO_REFERENCED_ROW_2') {
       status = HttpStatus.BAD_REQUEST;
       mensaje = 'El usuario o la categoría especificada no existe';
@@ -52,17 +52,17 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       status = HttpStatus.CONFLICT;
       mensaje = 'Ya existe un registro con esos datos';
     }
-    // 3️⃣ Errores de rutas no encontradas
+    /* Errores de rutas no encontradas*/
     else if (exception?.message?.includes('Cannot GET') || exception?.message?.includes('Cannot POST')) {
       status = HttpStatus.NOT_FOUND;
       mensaje = 'La ruta solicitada no existe';
     }
-    // 4️⃣ Log del error real para debugging
+    /* Log del error real para debugging*/
     else {
       console.error('❌ Error no manejado:', exception);
     }
 
-    // Respuesta consistente
+    /* Respuesta consistente*/
     res.status(status).json({
       statusCode: status,
       mensaje,
@@ -72,17 +72,17 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   }
 }
 
-// 🚀 Función principal que arranca la app
+/* Función principal que arranca la app*/
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Permitir CORS (para frontend)
+  /* Permitir CORS (para frontend)*/
   app.enableCors();
 
-  // Prefijo global para tus rutas (opcional pero recomendado)
+  /* Prefijo global para tus rutas (opcional pero recomendado)*/
   app.setGlobalPrefix('api');
 
-  // Validaciones globales
+  /* Validaciones globales*/
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -91,7 +91,7 @@ async function bootstrap() {
     }),
   );
 
-  // Verificar la conexión a la base de datos
+  /*Verificar la conexión a la base de datos*/
   const dataSource = app.get(DataSource);
   if (!dataSource.isInitialized) {
     try {
@@ -105,7 +105,7 @@ async function bootstrap() {
     console.log('✅ Conexión a la base de datos ya estaba establecida');
   }
   
-  // Filtro global de errores
+  /* Filtro global de errores*/
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   const port = process.env.PORT ?? 3000;

@@ -12,34 +12,30 @@ import { RolesEnum } from '../users/entities/user.entity';
 export class CategoriesController {
     constructor(private readonly categoryService: CategoriesService){}
 
-    // =====================
-    // VISTAS PARA TODOS LOS USUARIOS
-    // =====================
-
-    // Obtener todas las categorías activas
+    /* Obtener todas las categorías activas*/
     @Get()
     @Roles(RolesEnum.USER, RolesEnum.PREMIUM)
     getCategories() {
         return this.categoryService.getCategory();
     }
 
-    // ⭐ MOVER ESTA RUTA ANTES DE :id
-    // Obtener todas las categorías (activas e inactivas) - ADMIN
+    /*MOVER ESTA RUTA ANTES DE :id
+    * Obtener todas las categorías (activas e inactivas) - ADMIN
+    */
     @Get('all')
     @Roles(RolesEnum.ADMIN)
     getAllCategories(){
         return this.categoryService.getCategoryAdmi()
     }
 
-    // Obtener categorías por tipo (income / expense)
+    /* Obtener categorías por tipo (income / expense)*/
     @Get('type/:type')
     @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
     getType(@Param('type') type: 'income' | 'expense') {
         return this.categoryService.getByType(type);
     }
 
-    // ⭐ Esta ruta debe ir AL FINAL de los GET
-    // Obtener categoría por ID
+    /* Obtener categoría por ID*/
     @Get(':id')
     @Roles( RolesEnum.PREMIUM, RolesEnum.ADMIN)
     getId(@Param('id', ParseIntPipe) id: number) {
@@ -52,25 +48,21 @@ export class CategoriesController {
         return this.categoryService.getByName(name)
     }
 
-    // =====================
-    // ADMIN: CRUD COMPLETO
-    // =====================
-
-    // Crear categorias (admin)
+    /* Crear categorias (admin)*/
     @Post()
     @Roles(RolesEnum.ADMIN)
     createIncome(@Body() body: createCategoryDTO){
         return this.categoryService.createCategory(body);
     }
 
-    // Actualizar categorias (admin)
+    /* Actualizar categorias (admin)*/
     @Put(':id')
     @Roles(RolesEnum.ADMIN)
     updateCategory(@Param('id', ParseIntPipe) id: number, @Body() body: updateCategoryDTO){
         return this.categoryService.updateCategory(id, body);
     }
 
-    // Eliminar categoria (admin)
+    /*Desactivar categoria (admin)*/
     @Delete(':id')
     @Roles(RolesEnum.ADMIN)
     removeCategiry(@Param('id', ParseIntPipe) id: number){

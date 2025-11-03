@@ -1,5 +1,8 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
+/*Inserciones tabla:
+*Categories
+*/
 export class SeedCategories1730023456789 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

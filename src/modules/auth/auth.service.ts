@@ -21,7 +21,7 @@ export class AuthService {
 
   // Función asíncrona para registrar un nuevo usuario
     async register(data: CreateUserDTO) {
-    // 1️⃣ Verifica si ya existe un usuario con el mismo email
+    //  Verifica si ya existe un usuario con el mismo email
     const existingUser = await this.userRepo.findOne({ 
         where: { email: data.email } 
     });
@@ -30,10 +30,10 @@ export class AuthService {
         throw new BadRequestException('Ya existe un usuario con ese email');
     }
 
-    // 2️⃣ Hashea la contraseña con bcrypt
+    //  Hashea la contraseña con bcrypt
     const hashedPassword = await bcrypt.hash(data.password, 10);
     
-    // 3️⃣ Crea la entidad User con los datos del DTO y la contraseña hasheada
+    //  Crea la entidad User con los datos del DTO y la contraseña hasheada
     const userCreated = this.userRepo.create({ 
         ...data, 
         password: hashedPassword,
@@ -41,10 +41,10 @@ export class AuthService {
         isActive: true,
     }); 
     
-    // 4️⃣ Guarda el usuario en la base de datos
+    //  Guarda el usuario en la base de datos
     await this.userRepo.save(userCreated);
     
-    // 5️⃣ Retorna un mensaje simple y los datos principales del usuario
+    // Retorna un mensaje simple y los datos principales del usuario
     return {
         message: 'Bienvenid@ a Mi Bolsillo', 
         user: {
@@ -56,14 +56,14 @@ export class AuthService {
     //Función asincrona para autenticar usuarios
     async login (data: LoginUserDTO) {
         console.log('Datos recibidos:', data);
-        // 1️⃣ Busca el usuario por email
+        //  Busca el usuario por email
         const user = await this.userRepo.findOne({where: {email: data.email}})
         console.log('Usuario encontrado:', user);
         //verifica si el usuario existe
         if (!user) {
             throw new UnauthorizedException('Credenciales inválidas');
         }
-        // 2️⃣ Compara la contraseña enviada con la almacenada
+        //  Compara la contraseña enviada con la almacenada
         const isPasswordValid = await bcrypt.compare(data.password, user.password);
 
         // si la contraseña no es válida, lanza una excepción
@@ -75,7 +75,7 @@ export class AuthService {
         //const payload = { sub: user.id, email: user.email }; // Información que se incluirá en el token
         //const accessToken = this.jwtService.sign(payload); // Genera el token JWT
         // Retorna el usuario y el token de acceso
-         // 3️⃣ Prepara el payload del JWT
+         // Prepara el payload del JWT
         const payloadToken = { 
                 sub: user.id, 
                 name: user.name, 
@@ -101,7 +101,7 @@ export class AuthService {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
-        // 2️⃣ Compara la contraseña enviada con la almacenada
+        // Compara la contraseña enviada con la almacenada
         const isPasswordValid = await bcrypt.compare(data.password, dataUser.password);
         // si la contraseña no es válida, lanza una excepción
         if (!isPasswordValid) {

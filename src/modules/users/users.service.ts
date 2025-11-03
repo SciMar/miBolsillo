@@ -25,16 +25,17 @@ export class UsersService { //Servicio para manejar los usuarios
         return this.usersRepo.find();
     }
 
-    //1️⃣REGISTRO DE USUARIO
+    /*REGISTRO DE USUARIO*/
     async create(newUser: CreateUserDTO) {
-    // Verifica si ya existe un usuario con el mismo email
+    /*Verifica si ya existe un usuario con el mismo email*/
     const existingUser = await this.usersRepo.findOne({ where: { email: newUser.email } });
     if (existingUser) 
         throw new BadRequestException('Ya existe un usuario con ese email');
 
-    // Crea una nueva entidad User con los datos del DTO
-    //    - role: si no se envía, se asigna 'user' por defecto
-    //    - isActive: por defecto activo
+    /* Crea una nueva entidad User con los datos del DTO
+    *    - role: si no se envía, se asigna 'user' por defecto
+    *    - isActive: por defecto activo
+     */
     const hashedPassword = await bcrypt.hash(newUser.password, 10);
     const userEntity = this.usersRepo.create({
         ...newUser,
@@ -42,29 +43,30 @@ export class UsersService { //Servicio para manejar los usuarios
         isActive: true,
     });
 
-    //  Guarda la entidad en la base de datos
-    //    - Aquí se ejecuta el @BeforeInsert() de la entidad
-    //    - La contraseña se encripta automáticamente antes de insertarse
+    /*  Guarda la entidad en la base de datos
+    *    - Aquí se ejecuta el @BeforeInsert() de la entidad
+    *   - La contraseña se encripta automáticamente antes de insertarse
+    */
     return this.usersRepo.save(userEntity);
     }
 
-    // 2️⃣  NUEVO: Actualizar rol de usuario
+    /* NUEVO: Actualizar rol de usuario*/
     async updateRole(id: number, newRole: 'user' | 'premium') {
-        // 1️⃣ Busca el usuario
+        /*Busca el usuario*/
         const user = await this.findOne(id);
         
-        // 2️⃣ Evita que se cambie el rol de un admin
+        /* Evita que se cambie el rol de un admin*/
         if (user.role === 'admin') {
             throw new ForbiddenException('No se puede cambiar el rol de un administrador');
         }
 
-         // 3️⃣ Actualiza el rol
+         /* Actualiza el rol*/
         await this.usersRepo.update(id, { role: newRole });
 
-        // 4️⃣ Busca el usuario actualizado
+        /* Busca el usuario actualizado*/
         const updatedUser = await this.findOne(id);
 
-        // 5️⃣ Retorna un mensaje personalizado
+        /* Retorna un mensaje personalizado*/
         return {
             message: `✅ Rol actualizado con éxito`,
             user: {
@@ -75,28 +77,28 @@ export class UsersService { //Servicio para manejar los usuarios
     
     }
     
-    //3️⃣actualiza un usuario por id
+    /*actualiza un usuario por id*/
     async update(id: number, UpdateUser: UpdateUserDTO) {
         await this.usersRepo.update(id, UpdateUser)
             return this.findOne(id);
         }
     
-    //Inactivar un usuario por id
+    /*Inactivar un usuario por id*/
     async inactiveUser(id:number){
-        //Actualiza el estado del usuario en el sistema
+        /*Actualiza el estado del usuario en el sistema*/
         const inactiveUser=await this.usersRepo.update(id, {isActive:false});
 
-        //Evalua si alguna de los registros se vio afectado, sino devuelve una excepcion
+        /*Evalua si alguna de los registros se vio afectado, sino devuelve una excepcion*/
         if(inactiveUser.affected===0){
             throw new NotFoundException(`El usuario con id ${id} no existe`); 
         }else{
-            //Si se realizo la actualizacion, se consulta la informacion del usuario 
+            /*Si se realizo la actualizacion, se consulta la informacion del usuario */
             const user=await this.usersRepo.findOne({where:{id}});
             return{message:`El usuario ${user.name} ha sido inactivado exitosamente`}
         }
     } 
 
-    // Busca un usuario por su ID
+    /* Busca un usuario por su ID*/
     async findOne(id: number) {
         const userFind = await this.usersRepo.findOne ({where:{id}})
         if (!userFind) throw new NotFoundException('Usuario no encontrado')

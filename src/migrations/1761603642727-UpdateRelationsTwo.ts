@@ -1,5 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
-
+/* 
+*Eliminación clave foranea, tabla presuspuestos
+*/
 export class UpdateRelationsTwo1761603642727 implements MigrationInterface {
     name = 'UpdateRelationsTwo1761603642727'
 

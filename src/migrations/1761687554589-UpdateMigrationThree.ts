@@ -1,5 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
-
+/*
+*Agregación llave foranea budgets a categories
+*/
 export class UpdateMigrationThree1761687554589 implements MigrationInterface {
     name = 'UpdateMigrationThree1761687554589'
 

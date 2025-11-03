@@ -13,7 +13,7 @@ import { User } from '../auth/decorators/user.decorator';
 export class TransactionsController {
   constructor(private readonly service: TransactionsService) {}
 
-// ✅ 1. POST - crear transacción
+/* POST - crear transacción*/
   @Post()
   async create(
     @Body() dto: CreateTransactionDto,
@@ -21,7 +21,7 @@ export class TransactionsController {
   ) {
     return this.service.create(dto, user);
   }
-// ✅ 2. GET Obtener transacciones de un usuario filtradas por tipo (income/expense)
+/* GET Obtener transacciones de un usuario filtradas por tipo (income/expense)*/
   
   @Get('user/:userId/grouped')
   @Roles(RolesEnum.ADMIN)
@@ -29,7 +29,7 @@ export class TransactionsController {
     return this.service.findAllByUserGrouped(userId);
   }
 
-// ✅ 3. GET - Obtener el balance general del usuario autenticado (total ingresos, total gastos y saldo)
+/* GET - Obtener el balance general del usuario autenticado (total ingresos, total gastos y saldo)*/
   @Get('my-balance')
   @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
   async getMyBalance(@Req() req) {
@@ -38,21 +38,23 @@ export class TransactionsController {
     return this.service.getBalance(userId);
   }
 
-// ✅ 4. GET - Obtener el balance general de un usuario específico por su ID (total ingresos, total gastos y saldo) - Solo ADMIN
+/*GET - Obtener el balance general de un usuario específico por su ID
+* (total ingresos, total gastos y saldo) - Solo ADMIN
+*/
   @Get('balance/:userId')
   @Roles(RolesEnum.ADMIN)
   async getBalance(@Param('userId', ParseIntPipe) userId: number) {
     return this.service.getBalance(userId);
   }
 
-  // ✅ 5. Ruta genérica :id AL FINAL (captura todo lo demás)
+  /* Ruta genérica :id AL FINAL (captura todo lo demás)*/
   @Get(':id')
   @Roles(RolesEnum.ADMIN)
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
-  // Actualizar una transacción existente
+  /* Actualizar una transacción existente*/
 @Patch(':id')
 @Roles(RolesEnum.PREMIUM, RolesEnum.ADMIN)
 async update(
@@ -63,7 +65,7 @@ async update(
   return this.service.update(id, dto, user);
 }
 
-  // Eliminar una transacción
+  /* Eliminar una transacción*/
   @Delete(':id')
   @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
   async remove(@Param('id', ParseIntPipe) id: number) {
