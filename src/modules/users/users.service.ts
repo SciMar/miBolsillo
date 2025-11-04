@@ -25,29 +25,42 @@ export class UsersService { //Servicio para manejar los usuarios
         return this.usersRepo.find();
     }
 
+     /* Busca un usuario por su ID*/
+    async findOne(id: number) {
+        const userFind = await this.usersRepo.findOne ({where:{id}})
+        if (!userFind) throw new NotFoundException('Usuario no encontrado')
+        return userFind
+    }
+
     /*REGISTRO DE USUARIO*/
     async create(newUser: CreateUserDTO) {
-    /*Verifica si ya existe un usuario con el mismo email*/
-    const existingUser = await this.usersRepo.findOne({ where: { email: newUser.email } });
-    if (existingUser) 
-        throw new BadRequestException('Ya existe un usuario con ese email');
+        /*Verifica si ya existe un usuario con el mismo email*/
+        const existingUser = await this.usersRepo.findOne({ where: { email: newUser.email } });
+        if (existingUser) 
+            throw new BadRequestException('Ya existe un usuario con ese email');
 
-    /* Crea una nueva entidad User con los datos del DTO
-    *    - role: si no se envía, se asigna 'user' por defecto
-    *    - isActive: por defecto activo
-     */
-    const hashedPassword = await bcrypt.hash(newUser.password, 10);
-    const userEntity = this.usersRepo.create({
-        ...newUser,
-        password:hashedPassword,
-        isActive: true,
-    });
+        /* Crea una nueva entidad User con los datos del DTO
+        *    - role: si no se envía, se asigna 'user' por defecto
+        *    - isActive: por defecto activo
+        */
+        const hashedPassword = await bcrypt.hash(newUser.password, 10);
+        const userEntity = await this.usersRepo.create({
+            ...newUser,
+            password:hashedPassword,
+            isActive: true,
+        });
 
-    /*  Guarda la entidad en la base de datos
-    *    - Aquí se ejecuta el @BeforeInsert() de la entidad
-    *   - La contraseña se encripta automáticamente antes de insertarse
-    */
-    return this.usersRepo.save(userEntity);
+        /*  Guarda la entidad en la base de datos
+        *    - Aquí se ejecuta el @BeforeInsert() de la entidad
+        *   - La contraseña se encripta automáticamente antes de insertarse
+        */
+        return this.usersRepo.save(userEntity);
+    }
+
+     /*actualiza un usuario por id*/
+    async update(id: number, UpdateUser: UpdateUserDTO) {
+        await this.usersRepo.update(id, UpdateUser)
+            return this.findOne(id);
     }
 
     /* NUEVO: Actualizar rol de usuario*/
@@ -76,13 +89,7 @@ export class UsersService { //Servicio para manejar los usuarios
         }
     
     }
-    
-    /*actualiza un usuario por id*/
-    async update(id: number, UpdateUser: UpdateUserDTO) {
-        await this.usersRepo.update(id, UpdateUser)
-            return this.findOne(id);
-        }
-    
+     
     /*Inactivar un usuario por id*/
     async inactiveUser(id:number){
         /*Actualiza el estado del usuario en el sistema*/
@@ -98,11 +105,6 @@ export class UsersService { //Servicio para manejar los usuarios
         }
     } 
 
-    /* Busca un usuario por su ID*/
-    async findOne(id: number) {
-        const userFind = await this.usersRepo.findOne ({where:{id}})
-        if (!userFind) throw new NotFoundException('Usuario no encontrado')
-        return userFind
-    }
+   
 }
   

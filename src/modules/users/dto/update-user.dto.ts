@@ -34,7 +34,7 @@ export class UpdateUserDTO{
    * Debe ser de tipo rol, obligatorio
    */
     @IsOptional()
-    role:Roles
+    role?:Roles
 /*
    * estatus del usuario 
    * No obligatorio, true o false
