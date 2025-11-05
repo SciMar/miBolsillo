@@ -33,7 +33,7 @@ export class CategoriesService {
     async getById(id: number) {
         const category = await this.categoryRepo.findOne({
             where: { id },
-            relations: ['transactions'] // ⭐ Opcional: incluir transacciones si es necesario
+            relations: ['transactions'] // Opcional: incluir transacciones si es necesario
         });
         
         if (!category) {
@@ -60,13 +60,13 @@ export class CategoriesService {
   /* Obtiene todas las categorías (activas e inactivas) */
     getCategoryAdmi() {
         return this.categoryRepo.find({
-            order: { status: 'DESC', name: 'ASC' } // ⭐ Activas primero, luego alfabético
+            order: { status: 'DESC', name: 'ASC' } //  Activas primero, luego alfabético
         });
     }
 
   /* Crea una nueva categoría (solo ADMIN) */
     async createCategory(newCategory: createCategoryDTO) {
-        // ⭐ Validar tipo primero (más eficiente)
+        //  Validar tipo primero (más eficiente)
         if (!['income', 'expense'].includes(newCategory.type)) {
             throw new BadRequestException('El tipo debe ser "income" o "expense"');
         }
