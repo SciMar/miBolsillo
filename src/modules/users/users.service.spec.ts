@@ -38,7 +38,7 @@ describe('UsersService', () => {
   });
 
   //Prueba unitaria de la excepcion cuando el usuario no existe
-  it('Deberia lanzar una excepcion si el usuario no existe', async()=>{
+  it('Deberia lanzar NotFoundException si el usuario no existe', async()=>{
     fakeRepository.findOne.mockResolvedValue(null);
     await expect(service.findOne(77)).rejects.toThrow(NotFoundException);
   });
@@ -55,7 +55,7 @@ describe('UsersService', () => {
   });
 
   //Prueba unitaria de la excepcion cuando el correo registrado ya existe del servicio create
-  it('Deberia lanzar una excepcion si el email ya existe', async()=>{
+  it('Deberia lanzar BadRequestException si el email ya existe', async()=>{
     const newUserMock={name:"Carlos", email:"sofia@gmail.com", password:"carlos123"}; 
 
     fakeRepository.findOne.mockResolvedValue({id:3, email:"sofia@gmail.com" }); 
@@ -85,7 +85,7 @@ describe('UsersService', () => {
   });
   
   //Prueba unitaria de la excepcion cuando el usuario no existe en el servicio inactiveUser
-  it('Deberia lanzar una excepcion si el usuario no existe', async()=>{
+  it('Deberia lanzar NotFoundException si el usuario no existe', async()=>{
     fakeRepository.update.mockResolvedValue({affected:0});
     await expect(service.inactiveUser(78)).rejects.toThrow(NotFoundException);
   });

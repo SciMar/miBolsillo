@@ -41,9 +41,9 @@ describe('UsersController', () => {
         expect(userFind.email).toEqual("sofia@gmail.com");
     });
 
-    //Prueba unitaria de la excepcion cuando el usuario no existe
+    //Prueba unitaria de la excepcion cuando el usuario no existe del servicio findOne
     it('Deberia lanzar una excepcion si el usuario no existe', async()=>{
-        service.findOne.mockResolvedValue(null);
+        (service.findOne as jest.Mock).mockRejectedValue(new NotFoundException('Usuario no encontrado'));
         await expect(controller.findOne(77)).rejects.toThrow(NotFoundException);
     });
 
@@ -85,9 +85,9 @@ describe('UsersController', () => {
             notifications:[]
         }; 
 
-        const call=()=>controller.create(newUserMock as any);
+        (service.create as jest.Mock).mockRejectedValue(new BadRequestException('Ya existe un usuario con ese email'));
 
-        await expect(call()).rejects.toThrow(BadRequestException);
+        await expect(controller.create(newUserMock as any)).rejects.toThrow(BadRequestException);
     })
 
     //Prueba unitaria del servicio update
@@ -132,32 +132,38 @@ describe('UsersController', () => {
             settings:[],  
             notifications:[] 
         };
-        service.update.mockResolvedValue({id:2, ...updatedStatusUser});
+        
+        service.inactiveUser.mockResolvedValue({
+            message: `El usuario ${updatedStatusUser.name} ha sido inactivado exitosamente`
+        });
         service.findOne.mockResolvedValue({id:2, ...updatedStatusUser});
-
-        const result=await service.inactiveUser(2); 
-        expect(controller.update).toHaveBeenCalledWith(2, {isActive:false});
+        
+        
+        const result=await controller.inactiveUser(2); 
+        expect(service.inactiveUser).toHaveBeenCalledWith(2);
         expect(result.message).toEqual(`El usuario ${updatedStatusUser.name} ha sido inactivado exitosamente`)
     });
 
     //Prueba unitaria de la excepcion cuando el usuario no existe en el servicio inactiveUser
     it('Deberia lanzar una excepcion si el usuario no existe', async()=>{
-        service.update.mockResolvedValue(null);
+        (service.inactiveUser as jest.Mock).mockRejectedValue(new NotFoundException('El usuario con id 78 no existe'));
         await expect(controller.inactiveUser(78)).rejects.toThrow(NotFoundException);
     });
 
     //Prueba unitaria del servicio updateRole
     it('Deberia actualizar el rol del usuario', async()=>{
         service.findOne.mockResolvedValue(usersFake[1]);
-        const userFind= await service.findOne(2); 
-        expect(userFind.email).toEqual("sara@gmail.com");
-        expect(userFind.role).toEqual("user");
-
-        service.update.mockResolvedValue({id:2, ...usersFake[1], role:RolesEnum.PREMIUM});
-        service.findOne.mockResolvedValue({...usersFake[1], role:"premium"});
+        service.updateRole.mockResolvedValue({
+            message:`✅ Rol actualizado con éxito`,
+            user: {
+                name: "Sara",
+                newRole: "premium",
+            }
+        });
 
         const result =await controller.updateRole(2,{role:RolesEnum.PREMIUM});
-        expect(service.update).toHaveBeenCalledWith(2,{role:"premium"});
+
+        expect(service.updateRole).toHaveBeenCalledWith(2, RolesEnum.PREMIUM);
         expect(result).toEqual({
         message:`✅ Rol actualizado con éxito`, 
         user: {
@@ -166,7 +172,4 @@ describe('UsersController', () => {
         }
         }); 
     })
-
-
-
 })
