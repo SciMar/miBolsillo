@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsEnum, IsOptional, Min } from 'class-validator';
+import { IsString, IsNumber, IsEnum, IsOptional, Min, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
 
 /*
@@ -8,11 +8,13 @@ import { Type } from 'class-transformer';
  */
 export class CreateTransactionDto {
     /* Descripción breve de la transacción (obligatoria y tipo texto) */
+  @IsNotEmpty({ message: 'El nombre de la transacción es obligatorio' })
   @IsString()
   description: string;
 
   
   /* Monto de la transacción (obligatorio, numérico y >= 0) */
+  @IsNotEmpty({ message: 'El monto es obligatorio' })
   @IsNumber()
   @Min(0)
   @Type(()=> Number) // Transforma el valor a número automáticamente
@@ -23,7 +25,7 @@ export class CreateTransactionDto {
   type: 'income' | 'expense';
 
 /* ID de categoría asociada (opcional) */
-  @IsOptional()
+  @IsNotEmpty({ message: 'Debe seleccionar una categoría para la transacción' })
   @IsNumber()
   categoryId?: number; // opcional si quieres asignar categoría
 }

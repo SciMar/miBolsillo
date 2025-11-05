@@ -12,7 +12,7 @@ import { RolesEnum } from '../users/entities/user.entity';
    * Por defecto: PREMIUM y ADMIN pueden acceder.
   */
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles (RolesEnum.PREMIUM, RolesEnum.ADMIN)
+@Roles (RolesEnum.PREMIUM, RolesEnum.ADMIN, RolesEnum.USER)
 @Controller('budgets')
 export class BudgetsController {
   constructor(private readonly service: BudgetsService) {}
