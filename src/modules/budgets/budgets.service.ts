@@ -13,7 +13,7 @@ import { UpdateBudgetDto } from './dto/update-budget.dto';
 export class BudgetsService {
   constructor(@InjectRepository(Budget) private readonly repo: Repository<Budget>) {}
 
-  /** Formatea una fecha a formato 'YYYY-MM-DD' o null si no existe. */  
+  /** Formatea una fecha a formato 'YYYY-MM-DD' o null si no existe. */ 
   private fmtDate(d?: Date | null): string | null {
     return d ? new Date(d).toISOString().slice(0, 10) : null; // YYYY-MM-DD
   }
@@ -36,38 +36,37 @@ export class BudgetsService {
     return { name, amount };
   }
 
-  /** 
-   * Crea un nuevo presupuesto asociado al usuario autenticado.
-   * Valida campos requeridos y el orden correcto de fechas antes de guardar.
-   */
+  /** * Crea un nuevo presupuesto asociado al usuario autenticado.
+    * Valida campos requeridos y el orden correcto de fechas antes de guardar.
+    */
   async createForUser(dto: CreateBudgetDto, user: any) {
-  const { name, amount } = this.pickNameAndAmount(dto);
+    const { name, amount } = this.pickNameAndAmount(dto);
 
-  if (!name) throw new BadRequestException('El campo name (o nombre) es obligatorio');
-  if (amount === undefined || amount === null) {
-    throw new BadRequestException('El campo amount (o monto) es obligatorio');
+    if (!name) throw new BadRequestException('El campo name (o nombre) es obligatorio');
+    if (amount === undefined || amount === null) {
+      throw new BadRequestException('El campo amount (o monto) es obligatorio');
+    }
+
+    if (dto.startDate && dto.endDate && new Date(dto.endDate) < new Date(dto.startDate)) {
+      throw new BadRequestException('La fecha de fin debe ser mayor o igual a la fecha de inicio');
+    }
+
+    const budget = this.repo.create({
+      name: name.trim(), // 💡 También aplica trim en create para consistencia (aunque tus tests no fallaron aquí)
+      amount,
+      userId: user.id, // ← se toma del token, NO del body
+      categoryId: dto.categoryId ?? null,
+      startDate: dto.startDate ? new Date(dto.startDate) : null,
+      endDate: dto.endDate ? new Date(dto.endDate) : null,
+    });
+
+    const saved = await this.repo.save(budget);
+    return this.toSpanishResponse(saved);
   }
-
-  if (dto.startDate && dto.endDate && new Date(dto.endDate) < new Date(dto.startDate)) {
-    throw new BadRequestException('La fecha de fin debe ser mayor o igual a la fecha de inicio');
-  }
-
-  const budget = this.repo.create({
-    name,
-    amount,
-    userId: user.id, // ← se toma del token, NO del body
-    categoryId: dto.categoryId ?? null,
-    startDate: dto.startDate ? new Date(dto.startDate) : null,
-    endDate: dto.endDate ? new Date(dto.endDate) : null,
-  });
-
-  const saved = await this.repo.save(budget);
-  return this.toSpanishResponse(saved);
-}
   /*
-   * Obtiene todos los presupuestos de un usuario.
-   * Permite aplicar filtros por categoría y ordena por fecha de creación.
-   */  
+    * Obtiene todos los presupuestos de un usuario.
+    * Permite aplicar filtros por categoría y ordena por fecha de creación.
+    */ 
   findAllByUser(userId: number, filters?: { categoryId?: number; from?: string; to?: string }) {
     const where: FindOptionsWhere<Budget> = { userId };
     if (typeof filters?.categoryId === 'number') where.categoryId = filters.categoryId;
@@ -78,42 +77,46 @@ export class BudgetsService {
     }).then(items => items.map(b => this.toSpanishResponse(b)));
   }
 
-  /** 
-   * Obtiene todos los presupuestos del sistema.
-   * Usado generalmente por administradores.
-   */
+  /** * Obtiene todos los presupuestos del sistema.
+    * Usado generalmente por administradores.
+    */
   findAll() {
-  return this.repo.find({
-    order: { startDate: 'DESC', createdAt: 'DESC' },
-  }).then(items => items.map(b => this.toSpanishResponse(b)));
-}
+    return this.repo.find({
+      order: { startDate: 'DESC', createdAt: 'DESC' },
+    }).then(items => items.map(b => this.toSpanishResponse(b)));
+  }
 
-  /** 
-   * Busca un presupuesto por su ID.
-   * Lanza error si no existe el registro.
-   */
+  /** * Busca un presupuesto por su ID.
+    * Lanza error si no existe el registro.
+    */
   async findOne(id: number) {
     const b = await this.repo.findOne({ where: { id } });
     if (!b) throw new NotFoundException('No se encontró el presupuesto');
     return this.toSpanishResponse(b);
   }
 
-  /** 
-   * Actualiza los datos de un presupuesto existente.
-   * Verifica que las fechas sean válidas antes de guardar los cambios.
-   */
+  /** * Actualiza los datos de un presupuesto existente.
+    * Verifica que las fechas sean válidas antes de guardar los cambios.
+    */
   async update(id: number, dto: UpdateBudgetDto) {
     const entity = await this.repo.findOne({ where: { id } });
     if (!entity) throw new NotFoundException('No se encontró el presupuesto');
 
-    const { name, amount } = this.pickNameAndAmount(dto);
+    const { name: originalName, amount } = this.pickNameAndAmount(dto);
+    
+    // 💡 CORRECCIÓN PRINCIPAL: Aplicar .trim() al nombre si existe.
+    let name: string | undefined = originalName;
+    if (name !== undefined) {
+        name = name.trim(); 
+    }
+    // Fin de la corrección
 
     if (dto.startDate && dto.endDate && new Date(dto.endDate) < new Date(dto.startDate)) {
       throw new BadRequestException('La fecha de fin debe ser mayor o igual a la fecha de inicio');
     }
 
     Object.assign(entity, {
-      ...(name !== undefined ? { name } : {}),
+      ...(name !== undefined ? { name } : {}), // Usa la variable 'name' limpia
       ...(amount !== undefined ? { amount } : {}),
       //...(dto.userId !== undefined ? { userId: dto.userId } : {}),//
       ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
@@ -125,10 +128,9 @@ export class BudgetsService {
     return this.toSpanishResponse(saved);
   }
 
-  /** 
-   * Elimina un presupuesto existente por su ID.
-   * Lanza error si el registro no existe.
-   */
+  /** * Elimina un presupuesto existente por su ID.
+    * Lanza error si el registro no existe.
+    */
   async remove(id: number) {
     const b = await this.repo.findOne({ where: { id } });
     if (!b) throw new NotFoundException('No se encontró el presupuesto');
@@ -138,27 +140,23 @@ export class BudgetsService {
   }
 
   /**
-   * Busca presupuestos cuyo nombre contenga el texto indicado.
-   * Devuelve resultados o un mensaje si no hay coincidencias.
-   */
-async buscarPorNombre(texto: string) {
-  if (!texto || !texto.trim()) {
-    return { mensaje: 'Debe ingresar un texto para buscar' };
+    * Busca presupuestos cuyo nombre contenga el texto indicado.
+    * Devuelve resultados o un mensaje si no hay coincidencias.
+    */
+  async buscarPorNombre(texto: string) {
+    if (!texto || !texto.trim()) {
+      return { mensaje: 'Debe ingresar un texto para buscar' };
+    }
+
+    const qb = this.repo
+      .createQueryBuilder('b')
+      .where('LOWER(b.name) LIKE :texto', { texto: `%${texto.toLowerCase()}%` })
+      .orderBy('b.createdAt', 'DESC');
+
+    const resultados = await qb.getMany();
+
+    return resultados.length
+      ? resultados.map((b) => this.toSpanishResponse(b))
+      : { mensaje: 'No se encontraron presupuestos con ese nombre' };
   }
-
-  const qb = this.repo
-    .createQueryBuilder('b')
-    .where('LOWER(b.name) LIKE :texto', { texto: `%${texto.toLowerCase()}%` })
-    .orderBy('b.createdAt', 'DESC');
-
-  const resultados = await qb.getMany();
-
-  return resultados.length
-    ? resultados.map((b) => this.toSpanishResponse(b))
-    : { mensaje: 'No se encontraron presupuestos con ese nombre' };
 }
-
-
-}
-
-
