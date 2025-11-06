@@ -77,6 +77,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  /* Prefijo global para tus rutas (opcional pero recomendado)*/
+  app.setGlobalPrefix('api');
+
   /*Configuración documentación Swagger*/
   const configDoc= new DocumentBuilder()
   .setTitle('API Mi Bolsillo')
@@ -97,9 +100,6 @@ async function bootstrap() {
 
   /* Permitir CORS (para frontend)*/
   app.enableCors();
-
-  /* Prefijo global para tus rutas (opcional pero recomendado)*/
-  app.setGlobalPrefix('api');
 
   /* Validaciones globales*/
   app.useGlobalPipes(
