@@ -9,6 +9,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 /* Filtro global de excepciones*/
 @Catch()
@@ -76,6 +77,24 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  /*Configuración documentación Swagger*/
+  const configDoc= new DocumentBuilder()
+  .setTitle('API Mi Bolsillo')
+  .setDescription('Dcoumentación de la API enfocada en la gestión de finanzas personales')
+  .setVersion('1.0')
+  .addBearerAuth()
+  .addTag('Users', "Gestión de usuarios y perfiles")
+  .addTag('Auth', "Autenticación y manejo de credenciales")
+  .addTag('Budgets', "Control y seguimiento de presupuestos")
+  .addTag('Categories', "Organización de categorías financieras (gastos e ingresos)")
+  .addTag('Transactions', "Gestión de ingresos y gastos")
+  .build();
+
+  /*Crear documento con la api completa, su configuración y ruta de acceso*/
+  const document=SwaggerModule.createDocument (app, configDoc); 
+  /*Ruta de acceso a la documentación de la API Mi Bolsillo*/
+  SwaggerModule.setup('/api/docs', app, document);
+
   /* Permitir CORS (para frontend)*/
   app.enableCors();
 
@@ -112,6 +131,6 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`🚀 Servidor corriendo en http://localhost:${port}`);
-}
+  }
 
 bootstrap();

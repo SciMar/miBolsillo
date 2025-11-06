@@ -7,7 +7,10 @@ import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesEnum } from './entities/user.entity';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Users')
+@ApiBearerAuth()
 @Controller('users')
 // Requieren un token JWT válido en el encabezado de autorización
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -20,6 +23,8 @@ export class UsersController {
   * http://localhost:3000/api/users (GET)
   */
   @Get()
+  @ApiOperation({summary:"Obtener todos los usuarios"})
+  @ApiResponse({status:200, description:"Lista de usuarios obtenida correctamente de la base de datos"})
   @Roles(RolesEnum.ADMIN)
   findAll() {
     return this.usersService.findAll();
@@ -31,6 +36,9 @@ export class UsersController {
   * http://localhost:3000/api/users/1 (GET)
   */
   @Get(':id')
+  @ApiOperation({summary:"Obtener un usuario por su id"})
+  @ApiResponse({status:200, description:"Usuario obtenido correctamente de la base de datos"})
+  @ApiResponse({status:404, description:"Usuario no encontrado en la base de datos"})
   @Roles(RolesEnum.ADMIN, RolesEnum.PREMIUM)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOne(id);
@@ -42,6 +50,9 @@ export class UsersController {
   * http://localhost:3000/api/users (POST)
   */
   @Post()
+  @ApiOperation({summary:"Crear un nuevo usuario"})
+  @ApiResponse({status:201, description:"Usuario creado correctamente en la base de datos"})
+  @ApiResponse({status:400, description:"Ya existe un usuario con ese email"})
   @Roles(RolesEnum.ADMIN)
   create(@Body() body: CreateUserDTO) {
     return this.usersService.create(body);
@@ -53,6 +64,8 @@ export class UsersController {
   * http://localhost:3000/api/users/2 (PUT)
   */
   @Put(':id')
+  @ApiOperation({summary:"Actualizar un usuario por su id"})
+  @ApiResponse({status:200, description:"Usuario actualizado correctamente en la base de datos"})
   @Roles(RolesEnum.ADMIN, RolesEnum.USER, RolesEnum.PREMIUM)
   update(@Param('id', ParseIntPipe) id: number, 
   @Body() body: UpdateUserDTO, 
@@ -70,6 +83,9 @@ export class UsersController {
   * http://localhost:3000/api/users/2 (DELETE)
   */
   @Delete(':id')
+  @ApiOperation({summary:"Inactivar un usuario por su id"})
+  @ApiResponse({status:200, description:"Usuario inactivado correctamente en la base de datos"})
+  @ApiResponse({status:404, description:"Usuario no encontrado en la base de datos"})
   @Roles(RolesEnum.ADMIN)
   inactiveUser(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.inactiveUser(id);
@@ -81,6 +97,9 @@ export class UsersController {
   * http://localhost:3000/api/users/profile/me (GET)
   */
   @Get('profile/me')
+  @ApiOperation({summary:"Obtener el perfil del usuario autenticado"})
+  @ApiResponse({status:200, description:"Perfil del usuario obtenido correctamente de la base de datos"})
+  @ApiResponse({status:401, description:"Usuario no autorizado"})
   @Roles(RolesEnum.USER, RolesEnum.PREMIUM, RolesEnum.ADMIN)
   getProfile(@Request() req) {
     return this.usersService.findOne(req.user.id);
@@ -92,6 +111,9 @@ export class UsersController {
   * http://localhost:3000/api/users/1/role (PATCH)
   */
   @Patch(':id/role')
+  @ApiOperation({summary:"Actualizar el rol de un usuario"})
+  @ApiResponse({status:200, description:"Rol del usuario actualizado correctamente en la base de datos"})
+  @ApiResponse({status:403, description:"No se puede cambiar el rol de un administrador"})
   @Roles(RolesEnum.ADMIN)
   updateRole(
     @Param('id', ParseIntPipe) id: number, 

@@ -1,23 +1,27 @@
 import { IsEmail, IsEnum, IsNotEmpty, IsString, Length } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 /*
  * DTO RecoverPasswordDTO
  * Define y valida el correo para cambiar la contraseña deñ usuario.
  * Aplica restricciones de tipo, longitud y obligatoriedad.
  */
 export class RecoverPasswordDTO{
+    @ApiProperty({example:"juan@gmail.com", description:"Correo electrónico del usuario"})
     @IsEmail({}, { message: 'El correo electrónico no es válido' })
     @Transform(({ value }) => value.trim().toLowerCase())
     email:string;
 /*
  * Solicita la contraseña antigua del usuario
  */
+    @ApiProperty({example:"contraseña123", description:"Contraseña actual del usuario"})
     @IsString()
     @Length(6,20, {message:"La contraseña debe tener entre 6 y 20 caracteres"})
     password:string;
 /*
  * Solicita la nueva contraseña del usuario
  */
+    @ApiProperty({example:"nuevaContraseña456", description:"Nueva contraseña del usuario"})
     @IsString()
     @Length(6,20, {message:"La nueva contraseña debe tener entre 6 y 20 caracteres"})
     newPassword:string;
